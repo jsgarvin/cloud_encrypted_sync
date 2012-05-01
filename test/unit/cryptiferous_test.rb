@@ -38,22 +38,17 @@ class CryptiferousTest < Test::Unit::TestCase
   
   def test_should_write_encrypted_version_of_file
     begin
-      key = S3::CONFIG['encryption_key']
       alg = "AES-128-CBC"
-      iv = "6543210987654321"
       
       aes = OpenSSL::Cipher::Cipher.new(alg)
       aes.encrypt
-      aes.key = key
-      aes.iv = iv
+      aes.key = S3::CONFIG['encryption_key']
+      aes.iv = S3::CONFIG['initialization_vector']
   
       File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__),'w') do |encrypted_file|
         File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)) do |unencrypted_file|
-          loop do
-            data = unencrypted_file.read(4096)
-            break unless data
-            cipher = aes.update(data)
-            encrypted_file << cipher
+          while data = unencrypted_file.read(4096)
+            encrypted_file << aes.update(data)
           end
           encrypted_file << aes.final
         end
@@ -61,16 +56,13 @@ class CryptiferousTest < Test::Unit::TestCase
       
       aes = OpenSSL::Cipher::Cipher.new(alg)
       aes.decrypt
-      aes.key = key
-      aes.iv = iv
+      aes.key = S3::CONFIG['encryption_key']
+      aes.iv = S3::CONFIG['initialization_vector']
       
       File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__),'w') do |decrypted_file|
         File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__)) do |encrypted_file|
-          loop do
-            data = encrypted_file.read(4096)
-            break unless data
-            cipher = aes.update(data)
-            decrypted_file << cipher
+          while data = encrypted_file.read(4096)
+            decrypted_file << aes.update(data)
           end
           decrypted_file << aes.final
         end
