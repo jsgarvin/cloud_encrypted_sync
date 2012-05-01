@@ -1,6 +1,7 @@
 require File.expand_path('../../../lib/cryptiferous', __FILE__)
 require 'test/unit'
 require 'yaml'
+require 'openssl'
 
 class CryptiferousTest < Test::Unit::TestCase
   
@@ -33,5 +34,46 @@ class CryptiferousTest < Test::Unit::TestCase
     ensure
       File.delete(test_yaml_path)
     end
+  end
+  
+  def test_should_write_encrypted_version_of_file
+    key = S3::CONFIG['encryption_key']
+    alg = "AES-128-CBC"
+    iv = "6543210987654321"
+    
+    aes = OpenSSL::Cipher::Cipher.new(alg)
+    aes.encrypt
+    aes.key = key
+    aes.iv = iv
+
+    File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__),'w') do |encrypted_file|
+      File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)) do |unencrypted_file|
+        loop do
+          data = unencrypted_file.read(4096)
+          break unless data
+          cipher = aes.update(data)
+          encrypted_file << cipher
+        end
+        encrypted_file << aes.final
+      end
+    end
+    
+    aes = OpenSSL::Cipher::Cipher.new(alg)
+    aes.decrypt
+    aes.key = key
+    aes.iv = iv
+    
+    File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__),'w') do |decrypted_file|
+      File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__)) do |encrypted_file|
+        loop do
+          data = encrypted_file.read(4096)
+          break unless data
+          cipher = aes.update(data)
+          decrypted_file << cipher
+        end
+        decrypted_file << aes.final
+      end
+    end
+    
   end
 end
