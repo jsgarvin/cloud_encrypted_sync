@@ -1,7 +1,9 @@
 require 'find'
 require 'digest'
+require 'yaml'
 
 class Cryptiferous
+  CONFIG = YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
   ALG = 'AES-128-CBC'
   
   class << self
@@ -35,8 +37,8 @@ class Cryptiferous
     def encrypt_file(path)
       aes = OpenSSL::Cipher::Cipher.new(ALG)
       aes.encrypt
-      aes.key = S3::CONFIG['encryption_key']
-      aes.iv = S3::CONFIG['initialization_vector']
+      aes.key = CONFIG['encryption_key']
+      aes.iv = CONFIG['initialization_vector']
       
       File.open(File.expand_path(path + '.enc',  __FILE__),'w') do |encrypted_file|
         File.open(File.expand_path(path,  __FILE__)) do |unencrypted_file|

@@ -1,6 +1,5 @@
 require File.expand_path('../../../lib/cryptiferous', __FILE__)
 require 'test/unit'
-require 'yaml'
 require 'openssl'
 
 class CryptiferousTest < Test::Unit::TestCase
@@ -56,8 +55,8 @@ class CryptiferousTest < Test::Unit::TestCase
       
       aes = OpenSSL::Cipher::Cipher.new(alg)
       aes.encrypt
-      aes.key = S3::CONFIG['encryption_key']
-      aes.iv = S3::CONFIG['initialization_vector']
+      aes.key = Cryptiferous::CONFIG['encryption_key']
+      aes.iv = Cryptiferous::CONFIG['initialization_vector']
   
       File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__),'w') do |encrypted_file|
         File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)) do |unencrypted_file|
@@ -70,8 +69,8 @@ class CryptiferousTest < Test::Unit::TestCase
       
       aes = OpenSSL::Cipher::Cipher.new(alg)
       aes.decrypt
-      aes.key = S3::CONFIG['encryption_key']
-      aes.iv = S3::CONFIG['initialization_vector']
+      aes.key = Cryptiferous::CONFIG['encryption_key']
+      aes.iv = Cryptiferous::CONFIG['initialization_vector']
       
       File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__),'w') do |decrypted_file|
         File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__)) do |encrypted_file|

@@ -1,14 +1,14 @@
 require 'aws-sdk'
 class S3
-  CONFIG = YAML.load_file(File.expand_path('../../config/s3.yml',  __FILE__))
+  
   class << self
     
     def connection
-      @connection ||= AWS::S3.new(S3::CONFIG['credentials'])
+      @connection ||= AWS::S3.new(Cryptiferous::CONFIG['s3_credentials'])
     end
     
     def bucket_name
-      @bucket_name ||= CONFIG['bucket_name']
+      @bucket_name ||= Cryptiferous::CONFIG['bucket_name']
     end
     
     def bucket_name=(string)
