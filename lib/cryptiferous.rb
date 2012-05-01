@@ -1,5 +1,5 @@
 require 'find'
-require 'openssl'
+require 'digest'
 
 class Cryptiferous
   
@@ -20,7 +20,7 @@ class Cryptiferous
     end
     
     def hash_file(path)
-      sha1 = OpenSSL::Digest::SHA1.new
+      sha1 = Digest::SHA2.new
       File.open(path) do |file|
         buffer = ''
         while not file.eof

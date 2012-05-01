@@ -6,13 +6,13 @@ class CryptiferousTest < Test::Unit::TestCase
   
   def test_should_generate_directory_hash
     hash = Cryptiferous.directory_hash(File.expand_path('../../test_folder',  __FILE__))
-    assert_equal({"8be114e248f87e8c1e7bc6c7b7b3b9f073a93c1b"=>"test_sub_folder/test_file_one.txt"},hash)
+    assert_equal({"7904ae460e85873e0fd6a9de9ef143d4191cdbf96055f64e93b12b111e691653"=>"test_sub_folder/test_file_one.txt"},hash)
     
   end
   
   def test_should_hash_file
     hash = Cryptiferous.hash_file(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__))
-    assert_equal(OpenSSL::Digest::SHA1,hash.class)
+    assert_equal(Digest::SHA2,hash.class)
   end
   
   def test_should_write_readable_yml_file
