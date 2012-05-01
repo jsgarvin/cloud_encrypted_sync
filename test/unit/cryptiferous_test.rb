@@ -5,6 +5,10 @@ require 'openssl'
 
 class CryptiferousTest < Test::Unit::TestCase
   
+  def setup
+    @test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
+  end
+  
   def test_should_generate_directory_hash
     hash = Cryptiferous.directory_hash(File.expand_path('../../test_folder',  __FILE__))
     assert_equal({"7904ae460e85873e0fd6a9de9ef143d4191cdbf96055f64e93b12b111e691653"=>"test_sub_folder/test_file_one.txt"},hash)
@@ -33,6 +37,16 @@ class CryptiferousTest < Test::Unit::TestCase
       assert_equal(hash,new_hash)
     ensure
       File.delete(test_yaml_path)
+    end
+  end
+  
+  def test_should_encrypt_file
+    begin
+      assert_equal(false,File.exist?(@test_file_path+'.enc'))
+      Cryptiferous.encrypt_file(@test_file_path)
+      assert_equal(true,File.exist?(@test_file_path+'.enc'))
+    ensure
+      File.delete(@test_file_path+'.enc') if File.exist?(@test_file_path+'.enc')
     end
   end
   

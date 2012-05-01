@@ -2,6 +2,7 @@ require 'find'
 require 'digest'
 
 class Cryptiferous
+  ALG = 'AES-128-CBC'
   
   class << self
     
@@ -29,6 +30,22 @@ class Cryptiferous
         end
       end
       return sha1
+    end
+    
+    def encrypt_file(path)
+      aes = OpenSSL::Cipher::Cipher.new(ALG)
+      aes.encrypt
+      aes.key = S3::CONFIG['encryption_key']
+      aes.iv = S3::CONFIG['initialization_vector']
+      
+      File.open(File.expand_path(path + '.enc',  __FILE__),'w') do |encrypted_file|
+        File.open(File.expand_path(path,  __FILE__)) do |unencrypted_file|
+          while data = unencrypted_file.read(4096)
+            encrypted_file << aes.update(data)
+          end
+          encrypted_file << aes.final
+        end
+      end
     end
   end
 end
