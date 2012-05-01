@@ -40,7 +40,8 @@ class Cryptiferous
       aes.key = CONFIG['encryption_key']
       aes.iv = CONFIG['initialization_vector']
       
-      File.open(File.expand_path(path + '.enc',  __FILE__),'w') do |encrypted_file|
+      encrypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.enc"
+      File.open(encrypted_file_path,'w') do |encrypted_file|
         File.open(File.expand_path(path,  __FILE__)) do |unencrypted_file|
           while data = unencrypted_file.read(4096)
             encrypted_file << aes.update(data)
