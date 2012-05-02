@@ -46,7 +46,7 @@ class CryptiferousTest < Test::Unit::TestCase
       Cryptiferous.encrypt_file(@test_file_path)
       assert_equal(true,File.exist?(encrypted_file_path))
     ensure
-      File.delete(@test_file_path+'.enc') if File.exist?(@test_file_path+'.enc')
+      File.delete(encrypted_file_path) if File.exist?(encrypted_file_path)
     end
   end
   
