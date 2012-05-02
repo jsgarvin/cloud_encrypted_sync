@@ -4,7 +4,7 @@ require 'yaml'
 
 class Cryptiferous
   CONFIG = YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
-  ALG = 'AES-128-CBC'
+  ALG = 'AES-256-CBC'
   
   class << self
     
@@ -22,6 +22,30 @@ class Cryptiferous
       return directory
     end
     
+    def directory_key
+      @directory_key ||= encrypt_string('DirectoryFile')
+    end
+    
+    def generate_directory_file(root_path)
+      path = File.expand_path("../../temp/directory_structure.yml", __FILE__)
+      File.open(path, 'w') do |directory_file|
+        directory_file.write(Cryptiferous.directory_hash(root_path).to_yaml)
+      end
+      return path
+    end
+    
+    def decrypt_directory_file(data)
+      path = File.expand_path("../../temp/directory_structure.yml.encrypted", __FILE__)
+      File.open(path, 'w') do |directory_file|
+        directory_file.write(data)
+      end
+      decrypted_path = decrypt_file(path)
+      File.delete(path)
+      hash = YAML.load(File.read(decrypted_path))
+      File.delete(decrypted_path)
+      return hash
+    end
+    
     def hash_file(path)
       sha1 = Digest::SHA2.new
       File.open(path) do |file|
@@ -34,21 +58,50 @@ class Cryptiferous
       return sha1
     end
     
-    def encrypt_file(path)
-      aes = OpenSSL::Cipher::Cipher.new(ALG)
-      aes.encrypt
-      aes.key = CONFIG['encryption_key']
-      aes.iv = CONFIG['initialization_vector']
+    def crypt_file(direction,path)
+      cipher = setup_cipher(direction)
+      crypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.#{direction}ed"
       
-      encrypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.enc"
-      File.open(encrypted_file_path,'w') do |encrypted_file|
-        File.open(File.expand_path(path,  __FILE__)) do |unencrypted_file|
-          while data = unencrypted_file.read(4096)
-            encrypted_file << aes.update(data)
+      File.open(crypted_file_path,'w') do |crypted_file|
+        File.open(File.expand_path(path,  __FILE__)) do |precrypted_file|
+          while data = precrypted_file.read(4096)
+            crypted_file << cipher.update(data)
           end
-          encrypted_file << aes.final
+          crypted_file << cipher.final
         end
       end
+      return crypted_file_path
+    end
+    
+    def encrypt_file(path)
+      crypt_file(:encrypt, path)
+    end
+    
+    def decrypt_file(path)
+      crypt_file(:decrypt, path)
+    end
+    
+    def encrypt_string(string)
+      cipher = setup_cipher(:encrypt)
+      encrypted_string = cipher.update(string)
+      encrypted_string << cipher.final
+      return hash_string(encrypted_string.to_s)
+    end
+    
+    def hash_string(string)
+      Digest::SHA2.hexdigest(string,512)
+    end
+    
+    #######
+    private
+    #######
+    
+    def setup_cipher(crypt)
+      cipher = OpenSSL::Cipher::Cipher.new(ALG)
+      cipher.send(crypt)
+      cipher.key = hash_string(CONFIG['encryption_key'])
+      cipher.iv = hash_string(CONFIG['initialization_vector'])
+      return cipher
     end
   end
 end

@@ -19,10 +19,21 @@ class S3
       connection.buckets[@bucket_name]
     end
     
-    def write(path)
-      hash_key = Cryptiferous.hash_file(path)
+    def write(path, key = nil)
+      hash_key = key || Cryptiferous.hash_file(path)
       bucket.objects.create(hash_key,File.open(path))
     end
     
+    def store_directory_hash_file(root_path)
+      path = Cryptiferous.generate_directory_file(root_path)
+      encrypted_file_path = Cryptiferous.encrypt_file(path)
+      File.delete(path)
+      S3.write(encrypted_file_path,Cryptiferous.directory_key)
+      File.delete(encrypted_file_path)
+    end
+    
+    def fetch_directory_hash
+      return Cryptiferous.decrypt_directory_file(bucket.objects[Cryptiferous.directory_key].read)
+    end
   end
 end

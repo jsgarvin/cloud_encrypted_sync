@@ -18,4 +18,13 @@ class S3Test < Test::Unit::TestCase
     assert_equal(1,S3.bucket.objects.count)
   end
   
+  def test_should_write_and_read_encrypted_directory_file_to_s3
+    path = File.expand_path('../../test_folder',  __FILE__)
+    assert_equal(0,S3.bucket.objects.count)
+    S3.store_directory_hash_file(path)
+    assert_equal(1,S3.bucket.objects.count)
+    well_traveled_directory_hash = S3.fetch_directory_hash
+    assert_equal(Cryptiferous.directory_hash(path),well_traveled_directory_hash)
+  end
+  
 end

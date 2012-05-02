@@ -39,9 +39,13 @@ class CryptiferousTest < Test::Unit::TestCase
     end
   end
   
+  def test_should_encrypt_string
+    assert_equal('28c7cdd41ac00d41b59a2f930bef1d384c9510d77b15d61825b41e345ddec8829f0ea295cbadf839ca937601e4d0b2669bff2f7e984cee25651eb8cf440c6f99', Cryptiferous.encrypt_string('testing 123'))
+  end
+  
   def test_should_encrypt_file
     begin
-      encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/#{File.basename(@test_file_path)}.enc"
+      encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/#{File.basename(@test_file_path)}.encrypted"
       assert_equal(false,File.exist?(encrypted_file_path))
       Cryptiferous.encrypt_file(@test_file_path)
       assert_equal(true,File.exist?(encrypted_file_path))
