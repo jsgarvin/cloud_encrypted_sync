@@ -8,15 +8,14 @@ class Cryptiferous
   
   class << self
     
-    def directory_hash(root_path)
-      root_path += '/' unless root_path.match(/\/$/)
+    def directory_hash
       directory = {}
-      Find.find(root_path) do |path|
-        if FileTest.directory?(path)
+      Find.find(base_path) do |this_path|
+        if FileTest.directory?(this_path)
           next
         else
-          short_path = path.gsub(root_path,'')
-          directory[hash_file(path).to_s] = short_path
+          relative_path = this_path.gsub(base_path,'')
+          directory[hash_file(this_path).to_s] = relative_path
         end
       end
       return directory
@@ -26,10 +25,10 @@ class Cryptiferous
       @directory_key ||= encrypt_string('DirectoryFile')
     end
     
-    def generate_directory_file(root_path)
+    def generate_directory_file
       path = File.expand_path("../../temp/directory_structure.yml", __FILE__)
       File.open(path, 'w') do |directory_file|
-        directory_file.write(Cryptiferous.directory_hash(root_path).to_yaml)
+        directory_file.write(Cryptiferous.directory_hash.to_yaml)
       end
       return path
     end
@@ -90,6 +89,14 @@ class Cryptiferous
     
     def hash_string(string)
       Digest::SHA2.hexdigest(string,512)
+    end
+    
+    def base_path
+      if @base_path.nil?
+        @base_path = CONFIG['base_path']
+        @base_path += '/' unless @base_path.match(/\/$/)
+      end
+      return @base_path
     end
     
     #######

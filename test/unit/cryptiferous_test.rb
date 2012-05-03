@@ -1,17 +1,16 @@
 require File.expand_path('../../../lib/cryptiferous', __FILE__)
-require 'test/unit'
+require 'test_helper'
 require 'openssl'
 
-class CryptiferousTest < Test::Unit::TestCase
+class CryptiferousTest < ActiveSupport::TestCase
   
   def setup
     @test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
   end
   
   def test_should_generate_directory_hash
-    hash = Cryptiferous.directory_hash(File.expand_path('../../test_folder',  __FILE__))
+    hash = Cryptiferous.directory_hash
     assert_equal({"7904ae460e85873e0fd6a9de9ef143d4191cdbf96055f64e93b12b111e691653"=>"test_sub_folder/test_file_one.txt"},hash)
-    
   end
   
   def test_should_hash_file
@@ -24,7 +23,7 @@ class CryptiferousTest < Test::Unit::TestCase
       test_yaml_path = File.expand_path('../../test_folder/test.yaml',  __FILE__)
       assert_equal(false,File.exist?(test_yaml_path))
       
-      hash = Cryptiferous.directory_hash(File.expand_path('../../test_folder',  __FILE__))
+      hash = Cryptiferous.directory_hash
       
       file = File.open(test_yaml_path,'w+')
       file.write(hash.to_yaml)
@@ -52,6 +51,19 @@ class CryptiferousTest < Test::Unit::TestCase
     ensure
       File.delete(encrypted_file_path) if File.exist?(encrypted_file_path)
     end
+  end
+  
+  def test_should_return_nil_if_never_synced_before
+    assert_equal(nil,Cryptiferous.last_sync_date)
+  end
+  
+  def test_should_generate_local_directory_file_on_first_sync
+    last_synced_directory_file_path = File.expand_path('../../../data/last_synced_directory_file.yml', __FILE__)
+    assert_equal(false,File.exist?(last_synced_directory_file_path))
+    Cryptiferous.sync
+    assert_equal(true,File.exist?(last_synced_directory_file_path))
+    new_hash = YAML.load_file(last_synced_directory_file_path)
+    assert_equal(Cryptiferous.directory_hash,new_hash)
   end
   
   def test_should_write_encrypted_version_of_file
@@ -95,4 +107,6 @@ class CryptiferousTest < Test::Unit::TestCase
       File.delete(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__))
     end
   end
+  
+  
 end

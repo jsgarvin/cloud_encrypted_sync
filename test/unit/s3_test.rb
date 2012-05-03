@@ -1,12 +1,7 @@
 require File.expand_path('../../../lib/s3', __FILE__)
-require 'test/unit'
+require 'test_helper'
 
-class S3Test < Test::Unit::TestCase
-  
-  def setup
-    S3.bucket_name = 'jsgarvin-cryptiferous-test'
-    S3.bucket.clear!
-  end
+class S3Test < ActiveSupport::TestCase
   
   def test_should_return_open_connection_to_s3
     assert_equal(AWS::S3,S3.connection.class)
@@ -18,13 +13,13 @@ class S3Test < Test::Unit::TestCase
     assert_equal(1,S3.bucket.objects.count)
   end
   
-  def test_should_write_and_read_encrypted_directory_file_to_s3
-    path = File.expand_path('../../test_folder',  __FILE__)
+  def test_should_write_and_read_encrypted_directory_file_to_s3 
     assert_equal(0,S3.bucket.objects.count)
-    S3.store_directory_hash_file(path)
+    S3.store_directory_hash_file
     assert_equal(1,S3.bucket.objects.count)
     well_traveled_directory_hash = S3.fetch_directory_hash
-    assert_equal(Cryptiferous.directory_hash(path),well_traveled_directory_hash)
+    assert_equal(Cryptiferous.directory_hash,well_traveled_directory_hash)
   end
+  
   
 end

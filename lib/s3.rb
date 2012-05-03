@@ -8,11 +8,7 @@ class S3
     end
     
     def bucket_name
-      @bucket_name ||= Cryptiferous::CONFIG['bucket_name']
-    end
-    
-    def bucket_name=(string)
-      @bucket_name = string
+      @bucket_name ||= Cryptiferous::CONFIG['s3_bucket_name']
     end
     
     def bucket
@@ -24,8 +20,8 @@ class S3
       bucket.objects.create(hash_key,File.open(path))
     end
     
-    def store_directory_hash_file(root_path)
-      path = Cryptiferous.generate_directory_file(root_path)
+    def store_directory_hash_file
+      path = Cryptiferous.generate_directory_file
       encrypted_file_path = Cryptiferous.encrypt_file(path)
       File.delete(path)
       S3.write(encrypted_file_path,Cryptiferous.directory_key)
