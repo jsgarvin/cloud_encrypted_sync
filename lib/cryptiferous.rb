@@ -26,8 +26,7 @@ class Cryptiferous
     end
     
     def generate_directory_file
-      path = File.expand_path("../../temp/directory_structure.yml", __FILE__)
-      File.open(path, 'w') do |directory_file|
+      File.open(directory_file_path, 'w') do |directory_file|
         directory_file.write(Cryptiferous.directory_hash.to_yaml)
       end
       return path
@@ -99,6 +98,9 @@ class Cryptiferous
       return @base_path
     end
     
+    def last_sync_date
+      File.exist?(directory_file_path) ? File.stat(directory_file_path).ctime : nil
+    end
     #######
     private
     #######
@@ -109,6 +111,10 @@ class Cryptiferous
       cipher.key = hash_string(CONFIG['encryption_key'])
       cipher.iv = hash_string(CONFIG['initialization_vector'])
       return cipher
+    end
+    
+    def directory_file_path
+      @directory_file_path ||= File.expand_path("../../data/directory_structure.yml", __FILE__)
     end
   end
 end
