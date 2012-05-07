@@ -57,56 +57,32 @@ class CryptiferousTest < ActiveSupport::TestCase
     assert_equal(nil,Cryptiferous.last_sync_date)
   end
   
-  def test_should_generate_local_directory_file_on_first_sync
-    last_synced_directory_file_path = File.expand_path('../../../data/last_synced_directory_file.yml', __FILE__)
-    assert_equal(false,File.exist?(last_synced_directory_file_path))
-    Cryptiferous.sync
-    assert_equal(true,File.exist?(last_synced_directory_file_path))
-    new_hash = YAML.load_file(last_synced_directory_file_path)
-    assert_equal(Cryptiferous.directory_hash,new_hash)
+  def test_should_want_to_push_everything_on_first_run
+    assert_equal(Cryptiferous.directory_hash,Cryptiferous.files_to_push)
   end
   
-  def test_should_write_encrypted_version_of_file
+  def test_should_only_want_to_push_new_files_on_later_run
+    new_file_path = "#{Cryptiferous.base_path}test_should_only_want_to_push_new_files_on_later_run.txt"
     begin
-      alg = "AES-128-CBC"
-      
-      aes = OpenSSL::Cipher::Cipher.new(alg)
-      aes.encrypt
-      aes.key = Cryptiferous::CONFIG['encryption_key']
-      aes.iv = Cryptiferous::CONFIG['initialization_vector']
-  
-      File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__),'w') do |encrypted_file|
-        File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)) do |unencrypted_file|
-          while data = unencrypted_file.read(4096)
-            encrypted_file << aes.update(data)
-          end
-          encrypted_file << aes.final
-        end
+      Cryptiferous.generate_directory_file
+      File.open(new_file_path,'w') do |file|
+        file.write "This is only a test."
       end
-      
-      aes = OpenSSL::Cipher::Cipher.new(alg)
-      aes.decrypt
-      aes.key = Cryptiferous::CONFIG['encryption_key']
-      aes.iv = Cryptiferous::CONFIG['initialization_vector']
-      
-      File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__),'w') do |decrypted_file|
-        File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__)) do |encrypted_file|
-          while data = encrypted_file.read(4096)
-            decrypted_file << aes.update(data)
-          end
-          decrypted_file << aes.final
-        end
-      end
-      
-      assert_equal(
-        File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)).read,
-        File.open(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__)).read
-      )
+      assert_equal({"9973a0d1729566f34377e90cea4a40c0c1106d55baf2a3e0127ddcad4015962d"=> "test_should_only_want_to_push_new_files_on_later_run.txt"},Cryptiferous.files_to_push)
     ensure
-      File.delete(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.enc',  __FILE__))
-      File.delete(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt.dec',  __FILE__))
+      File.delete(new_file_path) if File.exist?(new_file_path)
     end
   end
   
+  def test_should_want_to_pull_new_files_from_s3
+    assert false
+  end
   
+  def test_should_want_to_delete_locally_missing_files_from_s3
+    assert false
+  end
+  
+  def test_should_want_to_delete_appropriate_files_locally
+    assert false
+  end
 end

@@ -9,16 +9,16 @@ class Cryptiferous
   class << self
     
     def directory_hash
-      directory = {}
+      directory_hash = {}
       Find.find(base_path) do |this_path|
         if FileTest.directory?(this_path)
           next
         else
           relative_path = this_path.gsub(base_path,'')
-          directory[hash_file(this_path).to_s] = relative_path
+          directory_hash[hash_file(this_path).to_s] = relative_path
         end
       end
-      return directory
+      return directory_hash
     end
     
     def directory_key
@@ -29,7 +29,10 @@ class Cryptiferous
       File.open(directory_file_path, 'w') do |directory_file|
         directory_file.write(Cryptiferous.directory_hash.to_yaml)
       end
-      return path
+    end
+    
+    def encrypt_directory_file
+      encrypt_file(directory_file_path)
     end
     
     def decrypt_directory_file(data)
@@ -99,8 +102,17 @@ class Cryptiferous
     end
     
     def last_sync_date
-      File.exist?(directory_file_path) ? File.stat(directory_file_path).ctime : nil
+      @last_sync_date ||= File.exist?(directory_file_path) ? File.stat(directory_file_path).ctime : nil
     end
+    
+    def last_sync_hash
+      @last_sync_hash ||= File.exist?(directory_file_path) ? YAML.load(File.read(directory_file_path)) : {}
+    end
+    
+    def files_to_push
+      directory_hash.select{|k,v| !last_sync_hash.has_key?(k) }
+    end
+    
     #######
     private
     #######

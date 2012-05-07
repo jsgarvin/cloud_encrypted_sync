@@ -21,9 +21,8 @@ class S3
     end
     
     def store_directory_hash_file
-      path = Cryptiferous.generate_directory_file
-      encrypted_file_path = Cryptiferous.encrypt_file(path)
-      File.delete(path)
+      Cryptiferous.generate_directory_file
+      encrypted_file_path = Cryptiferous.encrypt_directory_file
       S3.write(encrypted_file_path,Cryptiferous.directory_key)
       File.delete(encrypted_file_path)
     end
