@@ -3,6 +3,21 @@ class S3Liason
   
   class << self
     
+    
+    
+    def write(path, key = nil)
+      hash_key = key || Cryptiferous.hash_file(path)
+      bucket.objects.create(hash_key,File.open(path))
+    end
+    
+    def read(key)
+      bucket.objects[key].read
+    end
+    
+    #######
+    private
+    #######
+    
     def connection
       @connection ||= AWS::S3.new(Cryptiferous::CONFIG['s3_credentials'])
     end
@@ -13,15 +28,6 @@ class S3Liason
     
     def bucket
       connection.buckets[@bucket_name]
-    end
-    
-    def write(path, key = nil)
-      hash_key = key || Cryptiferous.hash_file(path)
-      bucket.objects.create(hash_key,File.open(path))
-    end
-    
-    def read(key)
-      bucket.objects[key].read
     end
     
   end
