@@ -13,13 +13,4 @@ class S3LiasonTest < ActiveSupport::TestCase
     assert_equal(1,S3Liason.bucket.objects.count)
   end
   
-  def test_should_write_and_read_encrypted_directory_file_to_s3
-    assert_equal(0,S3Liason.bucket.objects.count)
-    S3Liason.store_directory_hash_file
-    assert_equal(1,S3Liason.bucket.objects.count)
-    well_traveled_directory_hash = S3Liason.fetch_directory_hash
-    assert_equal(Cryptiferous.directory_hash,well_traveled_directory_hash)
-  end
-  
-  
 end

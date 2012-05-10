@@ -20,15 +20,9 @@ class S3Liason
       bucket.objects.create(hash_key,File.open(path))
     end
     
-    def store_directory_hash_file
-      Cryptiferous.generate_directory_file
-      encrypted_file_path = Cryptiferous.encrypt_directory_file
-      write(encrypted_file_path,Cryptiferous.directory_key)
-      File.delete(encrypted_file_path)
+    def read(key)
+      bucket.objects[key].read
     end
     
-    def fetch_directory_hash
-      return Cryptiferous.decrypt_directory_file(bucket.objects[Cryptiferous.directory_key].read)
-    end
   end
 end

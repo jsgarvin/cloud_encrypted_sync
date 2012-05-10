@@ -74,6 +74,14 @@ class CryptiferousTest < ActiveSupport::TestCase
     end
   end
   
+  def test_should_write_and_read_encrypted_directory_file_to_s3
+    assert_equal(0,S3Liason.bucket.objects.count)
+    Cryptiferous.store_directory_hash_file
+    assert_equal(1,S3Liason.bucket.objects.count)
+    well_traveled_directory_hash = Cryptiferous.fetch_directory_hash
+    assert_equal(Cryptiferous.directory_hash,well_traveled_directory_hash)
+  end
+  
   def test_should_want_to_pull_new_files_from_s3
     assert false
   end

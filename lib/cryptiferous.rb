@@ -29,10 +29,7 @@ class Cryptiferous
       File.open(directory_file_path, 'w') do |directory_file|
         directory_file.write(Cryptiferous.directory_hash.to_yaml)
       end
-    end
-    
-    def encrypt_directory_file
-      encrypt_file(directory_file_path)
+      return encrypt_file(directory_file_path)
     end
     
     def decrypt_directory_file(data)
@@ -57,21 +54,6 @@ class Cryptiferous
         end
       end
       return sha1
-    end
-    
-    def crypt_file(direction,path)
-      cipher = setup_cipher(direction)
-      crypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.#{direction}ed"
-      
-      File.open(crypted_file_path,'w') do |crypted_file|
-        File.open(File.expand_path(path,  __FILE__)) do |precrypted_file|
-          while data = precrypted_file.read(4096)
-            crypted_file << cipher.update(data)
-          end
-          crypted_file << cipher.final
-        end
-      end
-      return crypted_file_path
     end
     
     def encrypt_file(path)
@@ -113,6 +95,16 @@ class Cryptiferous
       directory_hash.select{|k,v| !last_sync_hash.has_key?(k) }
     end
     
+    def fetch_directory_hash
+      return decrypt_directory_file(S3Liason.read(directory_key))
+    end
+    
+    def store_directory_hash_file
+      encrypted_file_path = generate_directory_file
+      S3Liason.write(encrypted_file_path,Cryptiferous.directory_key)
+      File.delete(encrypted_file_path)
+    end
+    
     #######
     private
     #######
@@ -127,6 +119,21 @@ class Cryptiferous
     
     def directory_file_path
       @directory_file_path ||= File.expand_path("../../data/directory_structure.yml", __FILE__)
+    end
+    
+    def crypt_file(direction,path)
+      cipher = setup_cipher(direction)
+      crypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.#{direction}ed"
+      
+      File.open(crypted_file_path,'w') do |crypted_file|
+        File.open(File.expand_path(path,  __FILE__)) do |precrypted_file|
+          while data = precrypted_file.read(4096)
+            crypted_file << cipher.update(data)
+          end
+          crypted_file << cipher.final
+        end
+      end
+      return crypted_file_path
     end
   end
 end
