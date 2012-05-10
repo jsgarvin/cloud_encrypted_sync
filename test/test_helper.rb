@@ -1,6 +1,7 @@
 require 'active_support'
 require 'active_support/test_case'
 require 'test/unit'
+require 'mocha'
 
 class ActiveSupport::TestCase
 
@@ -10,6 +11,12 @@ class ActiveSupport::TestCase
     S3Liason.instance_variable_set(:@bucket_name, 'jsgarvin-cryptiferous-test')
     S3Liason.send(:bucket).clear!
     File.delete(Cryptiferous.send(:directory_file_path)) if File.exist?(Cryptiferous.send(:directory_file_path))
+    if File.exist?(File.expand_path('../../temp/directory_structure.yml.encrypted',  __FILE__))
+      File.delete(File.expand_path('../../temp/directory_structure.yml.encrypted',  __FILE__))
+    end
+    if File.exist?(File.expand_path('../../temp/directory_structure.yml.encrypted.decrypted',  __FILE__))
+      File.delete(File.expand_path('../../temp/directory_structure.yml.encrypted.decrypted',  __FILE__))
+    end
     Cryptiferous.instance_variable_set(:@base_path, File.expand_path('../test_folder',  __FILE__) + '/')
     Cryptiferous.instance_variable_set(:@last_sync_hash, nil)
     Cryptiferous.instance_variable_set(:@last_sync_date, nil)
