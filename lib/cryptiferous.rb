@@ -92,10 +92,14 @@ class Cryptiferous
     end
     
     def files_to_push
-      directory_hash.select{|k,v| !last_sync_hash.has_key?(k) }
+      directory_hash.select{|k,v| !last_sync_hash.has_key?(k) and !remote_directory_hash.has_key?(k) }
     end
     
-    def fetch_directory_hash
+    def files_to_pull
+      remote_directory_hash.select{|k,v| !directory_hash.has_key?(k) and !last_sync_hash.has_key?(k) }
+    end
+    
+    def remote_directory_hash
       return decrypt_directory_file(S3Liason.read(directory_key))
     end
     

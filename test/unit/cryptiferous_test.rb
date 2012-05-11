@@ -57,11 +57,17 @@ class CryptiferousTest < ActiveSupport::TestCase
     assert_equal(nil,Cryptiferous.last_sync_date)
   end
   
-  def test_should_want_to_push_everything_on_first_run
+  def test_should_want_to_push_everything_on_first_run_with_local_files_and_empty_remote
+    stub_remote_directory_hash({})
     assert_equal(Cryptiferous.directory_hash,Cryptiferous.files_to_push)
   end
   
+  def test_should_want_to_pull_everything_on_first_run_with_remote_files_and_empty_local
+    assert false
+  end
+  
   def test_should_only_want_to_push_new_files_on_later_run
+    stub_remote_directory_hash(Cryptiferous.directory_hash)
     new_file_path = "#{Cryptiferous.base_path}test_should_only_want_to_push_new_files_on_later_run.txt"
     begin
       Cryptiferous.generate_directory_file
@@ -74,20 +80,12 @@ class CryptiferousTest < ActiveSupport::TestCase
     end
   end
   
-  def test_should_write_encrypted_directory_file_to_s3
-    encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/directory_structure.yml.encrypted"
-    S3Liason.expects(:write).with(encrypted_file_path,'38faa425f3699ef7bf4bea59a886f4d3d4064bee3b39085629e2bedcb69531689c523eb1f3fc0b50c01490a77353d19d47d6dcad0726434cbeb1dc013b1bebc6').returns(true)
-    Cryptiferous.store_directory_hash_file
-  end
-  
-  def test_should_read_encrypted_directory_file_from_s3
-    encrypted_data = File.open(Cryptiferous.generate_directory_file).read
-    S3Liason.expects(:read).with('38faa425f3699ef7bf4bea59a886f4d3d4064bee3b39085629e2bedcb69531689c523eb1f3fc0b50c01490a77353d19d47d6dcad0726434cbeb1dc013b1bebc6').returns(encrypted_data)
-    Cryptiferous.fetch_directory_hash
-  end
-  
   def test_should_want_to_pull_new_files_from_s3
-    assert false
+    encrypted_data = File.open(Cryptiferous.generate_directory_file).read
+    S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
+    Cryptiferous.expects(:directory_hash).returns({'testkey' => {'testkey' => 'test_sub_folder/remote_file.txt'}})
+    Cryptiferous.expects(:last_sync_hash).returns({'testkey' => {'testkey' => 'test_sub_folder/remote_file.txt'}})
+    assert_equal({'testkey' => 'test_sub_folder/remote_file.txt'},Cryptiferous.files_to_pull)
   end
   
   def test_should_want_to_delete_locally_missing_files_from_s3
@@ -97,4 +95,18 @@ class CryptiferousTest < ActiveSupport::TestCase
   def test_should_want_to_delete_appropriate_files_locally
     assert false
   end
+  
+  def test_should_write_encrypted_directory_file_to_s3
+    encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/directory_structure.yml.encrypted"
+    S3Liason.expects(:write).with(encrypted_file_path,Cryptiferous.directory_key).returns(true)
+    Cryptiferous.store_directory_hash_file
+  end
+  
+  def test_should_read_encrypted_directory_file_from_s3
+    encrypted_data = File.open(Cryptiferous.generate_directory_file).read
+    S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
+    Cryptiferous.remote_directory_hash
+  end
+  
+  
 end
