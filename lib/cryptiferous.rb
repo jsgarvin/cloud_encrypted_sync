@@ -96,11 +96,12 @@ class Cryptiferous
     end
     
     def files_to_pull
-      remote_directory_hash.select{|k,v| !directory_hash.has_key?(k) and !last_sync_hash.has_key?(k) }
+      dhash = directory_hash
+      remote_directory_hash.select{|k,v| !dhash.has_key?(k) and !last_sync_hash.has_key?(k) }
     end
     
     def remote_directory_hash
-      return decrypt_directory_file(S3Liason.read(directory_key))
+      decrypt_directory_file(S3Liason.read(directory_key))
     end
     
     def store_directory_hash_file

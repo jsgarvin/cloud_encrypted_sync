@@ -40,13 +40,13 @@ class ActiveSupport::TestCase
     S3Liason.stubs(:read).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
   end
   
-  def stub_remote_directory_hash(hash)
-    file_path = @temp_folder_path + '/stubbed_remote_directory_hash.yml'
-    File.open(file_path, 'w') do |directory_file|
-      directory_file.write(hash.to_yaml)
-    end
-    encrypted_data = File.open(Cryptiferous.encrypt_file(file_path)).read
-    S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
-  end
+  #def stub_remote_directory_hash(hash)
+  #  file_path = @temp_folder_path + '/stubbed_remote_directory_hash.yml'
+  #  File.open(file_path, 'w') do |directory_file|
+  #    directory_file.write(hash.to_yaml)
+  #  end
+  #  encrypted_data = File.open(Cryptiferous.encrypt_file(file_path)).read
+  #  S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
+  #end
   
 end
