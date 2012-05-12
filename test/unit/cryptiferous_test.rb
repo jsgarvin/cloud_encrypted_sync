@@ -8,17 +8,17 @@ class CryptiferousTest < ActiveSupport::TestCase
     @test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
   end
   
-  def test_should_generate_directory_hash
+  test 'should generate directory hash' do
     hash = Cryptiferous.directory_hash
     assert_equal({"7904ae460e85873e0fd6a9de9ef143d4191cdbf96055f64e93b12b111e691653"=>"test_sub_folder/test_file_one.txt"},hash)
   end
   
-  def test_should_hash_file
+  test 'should hash file' do
     hash = Cryptiferous.hash_file(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__))
     assert_equal(Digest::SHA2,hash.class)
   end
   
-  def test_should_write_readable_yml_file
+  test 'should write readable yml file' do
     begin
       test_yaml_path = File.expand_path('../../test_folder/test.yaml',  __FILE__)
       assert_equal(false,File.exist?(test_yaml_path))
@@ -38,11 +38,11 @@ class CryptiferousTest < ActiveSupport::TestCase
     end
   end
   
-  def test_should_encrypt_string
+  test 'should encrypt string' do
     assert_equal('28c7cdd41ac00d41b59a2f930bef1d384c9510d77b15d61825b41e345ddec8829f0ea295cbadf839ca937601e4d0b2669bff2f7e984cee25651eb8cf440c6f99', Cryptiferous.encrypt_string('testing 123'))
   end
   
-  def test_should_encrypt_file
+  test 'should encrypt file' do
     begin
       encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/#{File.basename(@test_file_path)}.encrypted"
       assert_equal(false,File.exist?(encrypted_file_path))
@@ -53,20 +53,20 @@ class CryptiferousTest < ActiveSupport::TestCase
     end
   end
   
-  def test_should_return_nil_if_never_synced_before
+  test 'should_return_nil_if_never_synced_before' do
     assert_equal(nil,Cryptiferous.last_sync_date)
   end
   
-  def test_should_want_to_push_everything_on_first_run_with_local_files_and_empty_remote
+  test 'should want to push everything on first run with local files and empty remote' do
     stub_remote_directory_hash({})
     assert_equal(Cryptiferous.directory_hash,Cryptiferous.files_to_push)
   end
   
-  def test_should_want_to_pull_everything_on_first_run_with_remote_files_and_empty_local
+  test 'should want to pull everything on first run with remote files and empty local' do
     assert false
   end
   
-  def test_should_only_want_to_push_new_files_on_later_run
+  test 'should only want to push new files on later run' do
     stub_remote_directory_hash(Cryptiferous.directory_hash)
     new_file_path = "#{Cryptiferous.base_path}test_should_only_want_to_push_new_files_on_later_run.txt"
     begin
@@ -80,7 +80,7 @@ class CryptiferousTest < ActiveSupport::TestCase
     end
   end
   
-  def test_should_want_to_pull_new_files_from_s3
+  test 'should want to pull new files from s3' do
     encrypted_data = File.open(Cryptiferous.generate_directory_file).read
     S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
     Cryptiferous.expects(:directory_hash).returns({'testkey' => {'testkey' => 'test_sub_folder/remote_file.txt'}})
@@ -88,25 +88,24 @@ class CryptiferousTest < ActiveSupport::TestCase
     assert_equal({'testkey' => 'test_sub_folder/remote_file.txt'},Cryptiferous.files_to_pull)
   end
   
-  def test_should_want_to_delete_locally_missing_files_from_s3
+  test 'should want to delete locally missing files from s3' do 
     assert false
   end
   
-  def test_should_want_to_delete_appropriate_files_locally
+  test 'should want to delete appropriate files locally' do
     assert false
   end
   
-  def test_should_write_encrypted_directory_file_to_s3
+  test 'should write encrypted directory file to s3' do
     encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/directory_structure.yml.encrypted"
     S3Liason.expects(:write).with(encrypted_file_path,Cryptiferous.directory_key).returns(true)
     Cryptiferous.store_directory_hash_file
   end
   
-  def test_should_read_encrypted_directory_file_from_s3
+  test 'should read encrypted directory file from s3' do
     encrypted_data = File.open(Cryptiferous.generate_directory_file).read
     S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
     Cryptiferous.remote_directory_hash
   end
-  
   
 end
