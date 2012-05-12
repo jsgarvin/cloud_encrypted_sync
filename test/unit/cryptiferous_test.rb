@@ -58,7 +58,7 @@ class CryptiferousTest < ActiveSupport::TestCase
   end
   
   test 'should want to push everything on first run with local files and empty remote' do
-    Cryptiferous.expects(:remote_directory_hash).returns({})
+    Cryptiferous.stubs(:remote_directory_hash).returns({})
     assert_equal(Cryptiferous.directory_hash,Cryptiferous.files_to_push)
   end
   
@@ -67,17 +67,17 @@ class CryptiferousTest < ActiveSupport::TestCase
   end
   
   test 'should only want to push new files on later run' do
-    Cryptiferous.expects(:remote_directory_hash).returns({'test_old_file_key' => 'test_sub_folder/old_file.txt'})
-    Cryptiferous.expects(:directory_hash).returns({'test_new_file_key' => 'test_sub_folder/new_file.txt', 'test_old_file_key' => 'test_sub_folder/old_file.txt'})
-    Cryptiferous.stubs(:last_sync_hash).returns({'test_old_file_key' => 'test_sub_folder/old_file.txt'})
-    assert_equal({'test_new_file_key' => 'test_sub_folder/new_file.txt'},Cryptiferous.files_to_push)
+    Cryptiferous.stubs(:remote_directory_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
+    Cryptiferous.stubs(:directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
+    Cryptiferous.stubs(:last_sync_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
+    assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Cryptiferous.files_to_push)
   end
   
   test 'should want to pull new files from s3' do
-    Cryptiferous.expects(:remote_directory_hash).returns({'test_remote_key' => 'test_sub_folder/remote_file.txt', 'test_local_key' => 'test_sub_folder/local_file.txt'})
-    Cryptiferous.expects(:directory_hash).returns({'test_local_key' => 'test_sub_folder/local_file.txt'})
-    Cryptiferous.expects(:last_sync_hash).returns({'test_local_key' => 'test_sub_folder/local_file.txt'})
-    assert_equal({'test_remote_key' => 'test_sub_folder/remote_file.txt'},Cryptiferous.files_to_pull)
+    Cryptiferous.stubs(:remote_directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
+    Cryptiferous.stubs(:directory_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
+    Cryptiferous.stubs(:last_sync_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
+    assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Cryptiferous.files_to_pull)
   end
   
   test 'should want to delete locally missing files from s3' do 
@@ -90,13 +90,13 @@ class CryptiferousTest < ActiveSupport::TestCase
   
   test 'should write encrypted directory file to s3' do
     encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/directory_structure.yml.encrypted"
-    S3Liason.expects(:write).with(encrypted_file_path,Cryptiferous.directory_key).returns(true)
+    S3Liason.stubs(:write).with(encrypted_file_path,Cryptiferous.directory_key).returns(true)
     Cryptiferous.store_directory_hash_file
   end
   
   test 'should read encrypted directory file from s3' do
     encrypted_data = File.open(Cryptiferous.generate_directory_file).read
-    S3Liason.expects(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
+    S3Liason.stubs(:read).with(Cryptiferous.directory_key).returns(encrypted_data)
     Cryptiferous.remote_directory_hash
   end
   
