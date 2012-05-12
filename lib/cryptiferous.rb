@@ -96,8 +96,15 @@ class Cryptiferous
     end
     
     def files_to_pull
-      dhash = directory_hash
-      remote_directory_hash.select{|k,v| !dhash.has_key?(k) and !last_sync_hash.has_key?(k) }
+      remote_directory_hash.select{|k,v| !directory_hash.has_key?(k) and !last_sync_hash.has_key?(k) }
+    end
+    
+    def remote_files_to_delete
+      remote_directory_hash.select{|k,v| !directory_hash.has_key?(k) and last_sync_hash.has_key?(k) }
+    end
+    
+    def local_files_to_delete
+      directory_hash.select{|k,v| !remote_directory_hash.has_key?(k) and last_sync_hash.has_key?(k) }
     end
     
     def remote_directory_hash
