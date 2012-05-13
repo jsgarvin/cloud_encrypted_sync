@@ -6,7 +6,7 @@ class S3Liason
     
     
     def write(path, key = nil)
-      hash_key = key || Cryptiferous.hash_file(path)
+      hash_key = key || Cryptographer.hash_file(path)
       bucket.objects.create(hash_key,File.open(path))
     end
     

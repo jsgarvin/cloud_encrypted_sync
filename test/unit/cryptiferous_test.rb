@@ -1,21 +1,11 @@
 require File.expand_path('../../../lib/cryptiferous', __FILE__)
 require 'test_helper'
-require 'openssl'
 
 class CryptiferousTest < ActiveSupport::TestCase
-  
-  def setup
-    @test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
-  end
   
   test 'should generate directory hash' do
     hash = Cryptiferous.directory_hash
     assert_equal({"7904ae460e85873e0fd6a9de9ef143d4191cdbf96055f64e93b12b111e691653"=>"test_sub_folder/test_file_one.txt"},hash)
-  end
-  
-  test 'should hash file' do
-    hash = Cryptiferous.hash_file(File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__))
-    assert_equal(Digest::SHA2,hash.class)
   end
   
   test 'should write readable yml file' do
@@ -34,22 +24,7 @@ class CryptiferousTest < ActiveSupport::TestCase
       new_hash = YAML.load_file(test_yaml_path)
       assert_equal(hash,new_hash)
     ensure
-      File.delete(test_yaml_path)
-    end
-  end
-  
-  test 'should encrypt string' do
-    assert_equal('28c7cdd41ac00d41b59a2f930bef1d384c9510d77b15d61825b41e345ddec8829f0ea295cbadf839ca937601e4d0b2669bff2f7e984cee25651eb8cf440c6f99', Cryptiferous.encrypt_string('testing 123'))
-  end
-  
-  test 'should encrypt file' do
-    begin
-      encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/#{File.basename(@test_file_path)}.encrypted"
-      assert_equal(false,File.exist?(encrypted_file_path))
-      Cryptiferous.encrypt_file(@test_file_path)
-      assert_equal(true,File.exist?(encrypted_file_path))
-    ensure
-      File.delete(encrypted_file_path) if File.exist?(encrypted_file_path)
+      File.delete(test_yaml_path) if File.exist?(test_yaml_path)
     end
   end
   
