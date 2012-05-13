@@ -22,7 +22,7 @@ class Cryptiferous
     end
     
     def directory_key
-      @directory_key ||= Cryptographer.encrypt_string('DirectoryFile')
+      @directory_key ||= Cryptographer.hash_string(CONFIG['encryption_key'])
     end
     
     def generate_directory_file
