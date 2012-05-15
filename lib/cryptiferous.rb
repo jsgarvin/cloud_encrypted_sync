@@ -91,7 +91,13 @@ class Cryptiferous
     #######
     
     def directory_file_path
-      @directory_file_path ||= File.expand_path("../../data/directory_structure.yml", __FILE__)
+      "#{data_directory}/folder_snapshot.yml"
+    end
+    
+    def data_directory
+      return @data_directory if @data_directory
+      @data_directory = "#{ENV['HOME']}/.s3_encrypted_sync"
+      FileUtils.mkdir_p(@data_directory)
     end
     
   end

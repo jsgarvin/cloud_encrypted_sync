@@ -59,7 +59,7 @@ class CryptiferousTest < ActiveSupport::TestCase
     assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Cryptiferous.files_to_pull)
   end
   
-  test 'should want to delete locally missing files from s3' do 
+  test 'should want to delete locally missing files from s3' do
     Cryptiferous.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
     Cryptiferous.stubs(:directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
     Cryptiferous.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
@@ -74,7 +74,7 @@ class CryptiferousTest < ActiveSupport::TestCase
   end
   
   test 'should write encrypted directory file to s3' do
-    encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/directory_structure.yml.encrypted"
+    encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/folder_snapshot.yml.encrypted"
     S3Liason.stubs(:write).with(encrypted_file_path,Cryptiferous.directory_key).returns(true)
     Cryptiferous.store_directory_hash_file
   end
