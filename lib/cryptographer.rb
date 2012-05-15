@@ -51,7 +51,7 @@ class Cryptographer
       crypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.#{direction}ed"
       
       File.open(crypted_file_path,'w') do |crypted_file|
-        File.open(File.expand_path(path,  __FILE__)) do |precrypted_file|
+        File.open(File.expand_path(path,  __FILE__),'rb') do |precrypted_file|
           while data = precrypted_file.read(4096)
             crypted_file << cipher.update(data)
           end
