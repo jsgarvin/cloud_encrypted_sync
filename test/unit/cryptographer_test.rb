@@ -1,5 +1,6 @@
-require File.expand_path('../../../lib/cryptiferous', __FILE__)
 require 'test_helper'
+require File.expand_path('../../../lib/cryptiferous', __FILE__)
+
 require 'openssl'
 
 class CryptographerTest < ActiveSupport::TestCase

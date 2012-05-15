@@ -1,7 +1,10 @@
+require 'simplecov'
+SimpleCov.start
 require 'active_support'
 require 'active_support/test_case'
 require 'test/unit'
 require 'mocha'
+
 
 class ActiveSupport::TestCase
 
