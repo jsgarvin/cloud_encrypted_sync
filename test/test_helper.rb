@@ -9,9 +9,10 @@ require 'master'
 
 class ActiveSupport::TestCase
 
+  setup :activate_fake_fs
   setup :set_config
   setup :roadblock_s3_liason
-  teardown :cleanup_files
+  teardown :deactivate_fake_fs
   
   def set_config
     @temp_folder_path = File.expand_path('../../temp', __FILE__)
@@ -23,23 +24,12 @@ class ActiveSupport::TestCase
     Master.stubs(:data_directory).returns(File.expand_path('../data', __FILE__))
   end
   
-  def cleanup_files
-    File.delete(Cryptiferous.send(:directory_file_path)) if File.exist?(Master.send(:directory_file_path))
-    if File.exist?(@temp_folder_path + '/../test/data/folder_snapshot.yml')
-      File.delete(@temp_folder_path + '/../test/data/folder_snapshot.yml')
-    end
-    if File.exist?(@temp_folder_path + '/directory_structure.yml.encrypted')
-      File.delete(@temp_folder_path + '/directory_structure.yml.encrypted')
-    end
-    if File.exist?(@temp_folder_path + '/directory_structure.yml.encrypted.decrypted')
-      File.delete(@temp_folder_path + '/directory_structure.yml.encrypted.decrypted')
-    end
-    if File.exist?(@temp_folder_path + '/stubbed_remote_directory_hash.yml')
-      File.delete(@temp_folder_path + '/stubbed_remote_directory_hash.yml')
-    end
-    if File.exist?(@temp_folder_path + '/stubbed_remote_directory_hash.yml.encrypted')
-      File.delete(@temp_folder_path + '/stubbed_remote_directory_hash.yml.encrypted')
-    end
+  def activate_fake_fs
+    FakeFS.activate!
+  end
+  
+  def deactivate_fake_fs
+    FakeFS.deactivate!
   end
   
   def roadblock_s3_liason
