@@ -26,11 +26,11 @@ class S3Liason
     #######
     
     def connection
-      @connection ||= AWS::S3.new(Cryptiferous::CONFIG['s3_credentials'])
+      @connection ||= AWS::S3.new(Master::CONFIG['s3_credentials'])
     end
     
     def bucket_name
-      @bucket_name ||= Cryptiferous::CONFIG['s3_bucket_name']
+      @bucket_name ||= Master::CONFIG['s3_bucket_name']
     end
     
     def bucket

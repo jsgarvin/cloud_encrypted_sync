@@ -3,7 +3,7 @@ require 'digest'
 require 'yaml'
 require 'cryptographer'
 
-class Cryptiferous
+class Master
   CONFIG = YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
   
   class << self
@@ -27,7 +27,7 @@ class Cryptiferous
     
     def generate_directory_file
       File.open(directory_file_path, 'w') do |directory_file|
-        directory_file.write(Cryptiferous.directory_hash.to_yaml)
+        directory_file.write(directory_hash.to_yaml)
       end
       return Cryptographer.encrypt_file(directory_file_path)
     end
@@ -82,7 +82,7 @@ class Cryptiferous
     
     def store_directory_hash_file
       encrypted_file_path = generate_directory_file
-      S3Liason.write(encrypted_file_path,Cryptiferous.directory_key)
+      S3Liason.write(encrypted_file_path,directory_key)
       File.delete(encrypted_file_path)
     end
     

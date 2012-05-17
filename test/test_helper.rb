@@ -16,14 +16,14 @@ class ActiveSupport::TestCase
     @temp_folder_path = File.expand_path('../../temp', __FILE__)
     S3Liason.instance_variable_set(:@bucket_name, 'jsgarvin-cryptiferous-test')
     S3Liason.send(:bucket).clear!
-    Cryptiferous.instance_variable_set(:@base_path, File.expand_path('../test_folder',  __FILE__) + '/')
-    Cryptiferous.instance_variable_set(:@last_sync_hash, nil)
-    Cryptiferous.instance_variable_set(:@last_sync_date, nil)
-    Cryptiferous.stubs(:data_directory).returns(File.expand_path('../data', __FILE__))
+    Master.instance_variable_set(:@base_path, File.expand_path('../test_folder',  __FILE__) + '/')
+    Master.instance_variable_set(:@last_sync_hash, nil)
+    Master.instance_variable_set(:@last_sync_date, nil)
+    Master.stubs(:data_directory).returns(File.expand_path('../data', __FILE__))
   end
   
   def cleanup_files
-    File.delete(Cryptiferous.send(:directory_file_path)) if File.exist?(Cryptiferous.send(:directory_file_path))
+    File.delete(Cryptiferous.send(:directory_file_path)) if File.exist?(Master.send(:directory_file_path))
     if File.exist?(@temp_folder_path + '/../test/data/folder_snapshot.yml')
       File.delete(@temp_folder_path + '/../test/data/folder_snapshot.yml')
     end
