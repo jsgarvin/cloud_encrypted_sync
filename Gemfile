@@ -1,6 +1,9 @@
 source 'http://rubygems.org'
 
 gem 'aws-sdk'
-gem 'activesupport'
-gem 'mocha', :require => false
-gem 'simplecov', :require => false, :group => :test
+gem 'activesupport', :require => 'active_support/test_case'
+
+group :test do
+  gem 'mocha'
+  gem 'simplecov'
+end

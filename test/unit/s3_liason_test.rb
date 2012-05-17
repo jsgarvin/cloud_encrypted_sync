@@ -1,5 +1,5 @@
 require 'test_helper'
-require File.expand_path('../../../lib/s3_liason', __FILE__)
+#require File.expand_path('../../../lib/s3_liason', __FILE__)
 
 class S3LiasonTest < ActiveSupport::TestCase
   

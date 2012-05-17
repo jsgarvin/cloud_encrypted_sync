@@ -1,5 +1,5 @@
 require 'test_helper'
-require File.expand_path('../../../lib/master', __FILE__)
+#require File.expand_path('../../../lib/master', __FILE__)
 
 require 'openssl'
 

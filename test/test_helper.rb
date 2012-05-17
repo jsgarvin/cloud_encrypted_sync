@@ -1,10 +1,11 @@
-require 'simplecov'
-SimpleCov.start
-require 'active_support'
-require 'active_support/test_case'
+require 'rubygems'
+require 'bundler/setup'
+Bundler.require(:default, :test)
 require 'test/unit'
-require 'mocha'
 
+SimpleCov.start
+
+require 'master'
 
 class ActiveSupport::TestCase
 

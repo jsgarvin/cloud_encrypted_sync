@@ -2,6 +2,7 @@ require 'find'
 require 'digest'
 require 'yaml'
 require 'cryptographer'
+require 's3_liason'
 
 class Master
   CONFIG = YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
