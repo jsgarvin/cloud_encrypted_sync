@@ -41,8 +41,8 @@ class Cryptographer
     def setup_cipher(crypt)
       cipher = OpenSSL::Cipher::Cipher.new(ALGORITHM)
       cipher.send(crypt)
-      cipher.key = hash_string(Master::CONFIG['encryption_key'])
-      cipher.iv = hash_string(Master::CONFIG['initialization_vector'])
+      cipher.key = hash_string(Master.config['encryption_key'])
+      cipher.iv = hash_string(Master.config['initialization_vector'])
       return cipher
     end
     

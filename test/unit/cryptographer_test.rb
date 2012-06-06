@@ -15,7 +15,7 @@ class CryptographerTest < ActiveSupport::TestCase
   end
   
   test 'should encrypt string' do
-    assert_equal('28c7cdd41ac00d41b59a2f930bef1d384c9510d77b15d61825b41e345ddec8829f0ea295cbadf839ca937601e4d0b2669bff2f7e984cee25651eb8cf440c6f99', Cryptographer.encrypt_string('testing 123'))
+    assert_equal('885e57411c7df4fa3b2881410cffd0969cdb700fcce168d2b3addcdec34603ff2ba40e078bb4012a4654bac01f7481049d5aa015aff554935ed8aa967a7728de', Cryptographer.encrypt_string('testing 123'))
   end
   
   test 'should encrypt and decrypt file' do

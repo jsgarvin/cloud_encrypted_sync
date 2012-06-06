@@ -5,27 +5,7 @@ class MasterTest < ActiveSupport::TestCase
   
   test 'should generate directory hash' do
     hash = Master.directory_hash
-    assert_equal({"7904ae460e85873e0fd6a9de9ef143d4191cdbf96055f64e93b12b111e691653"=>"test_sub_folder/test_file_one.txt"},hash)
-  end
-  
-  test 'should write readable yml file' do
-    begin
-      test_yaml_path = File.expand_path('../../test_folder/test.yaml',  __FILE__)
-      assert_equal(false,File.exist?(test_yaml_path))
-      
-      hash = Master.directory_hash
-      
-      file = File.open(test_yaml_path,'w+')
-      file.write(hash.to_yaml)
-      file.close
-      
-      assert_equal(true,File.exist?(test_yaml_path))
-      
-      new_hash = YAML.load_file(test_yaml_path)
-      assert_equal(hash,new_hash)
-    ensure
-      File.delete(test_yaml_path) if File.exist?(test_yaml_path)
-    end
+    assert_equal({"62f03aac0cdc25500aa99a54d690495e8012d5dde27583fdcf7be76803a76ca4"=>"test_sub_folder/test_file_one.txt"},hash)
   end
   
   test 'should_return_nil_if_never_synced_before' do

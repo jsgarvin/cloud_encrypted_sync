@@ -5,9 +5,12 @@ require 'cryptographer'
 require 's3_liason'
 
 class Master
-  CONFIG = YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
   
   class << self
+    
+    def config
+      @config ||= YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
+    end
     
     def directory_hash
       directory_hash = {}
@@ -23,7 +26,7 @@ class Master
     end
     
     def directory_key
-      @directory_key ||= Cryptographer.hash_string(CONFIG['encryption_key'])
+      @directory_key ||= Cryptographer.hash_string(config['encryption_key'])
     end
     
     def generate_directory_file
@@ -47,7 +50,7 @@ class Master
     
     def base_path
       if @base_path.nil?
-        @base_path = CONFIG['base_path']
+        @base_path = config['base_path']
         @base_path += '/' unless @base_path.match(/\/$/)
       end
       return @base_path
@@ -97,7 +100,7 @@ class Master
     
     def data_directory
       return @data_directory if @data_directory
-      @data_directory = "#{ENV['HOME']}/.s3_encrypted_sync"
+      @data_directory = "#{ENV['HOME']}/.cloud_encrypted_sync"
       FileUtils.mkdir_p(@data_directory)
     end
     
