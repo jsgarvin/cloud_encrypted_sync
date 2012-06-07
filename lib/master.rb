@@ -1,15 +1,27 @@
 require 'find'
 require 'digest'
 require 'yaml'
+require 'etc'
+
 require 'cryptographer'
 require 's3_liason'
 
+
 class Master
+  INITIAL_CONFIG = {:encryption_key => '', :initialization_vector => ''}
+  USER_FOLDER = "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
+  CONFIG_FILE = "#{USER_FOLDER}/config.yml"
   
   class << self
     
     def config
-      @config ||= YAML.load_file(File.expand_path('../../config/config.yml',  __FILE__))
+      if @config
+        return @config
+      else
+        FileUtils.mkdir_p(USER_FOLDER) unless Dir.exists?(USER_FOLDER)
+        File.open(CONFIG_FILE, 'w') { |config_file| config_file.write(INITIAL_CONFIG.to_yaml) } unless File.exist?(CONFIG_FILE)
+        @config ||= YAML.load_file(CONFIG_FILE)
+      end
     end
     
     def directory_hash
