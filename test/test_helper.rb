@@ -1,6 +1,9 @@
 require 'rubygems'
 require 'bundler/setup'
-Bundler.require(:default, :test)
+require 'mocha'
+require 'simplecov'
+require 'fakefs/safe'
+require 'active_support/test_case'
 require 'test/unit'
 
 SimpleCov.start
