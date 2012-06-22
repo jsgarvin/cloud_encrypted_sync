@@ -14,6 +14,8 @@ class MasterTest < ActiveSupport::TestCase
   
   test 'should want to push everything on first run with local files and empty remote' do
     Master.stubs(:remote_directory_hash).returns({})
+    Master.stubs(:directory_hash).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+    Master.stubs(:last_sync_hash).returns({})
     assert_equal(Master.directory_hash,Master.files_to_push)
   end
   
