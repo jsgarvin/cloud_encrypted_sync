@@ -58,12 +58,14 @@ class MasterTest < ActiveSupport::TestCase
     encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/folder_snapshot.yml.encrypted"
     S3Liason.stubs(:write).with(encrypted_file_path,Master.directory_key).returns(true)
     Master.store_directory_hash_file
+    assert false  #should probably assert something useful here
   end
   
   test 'should read encrypted directory file from s3' do
     encrypted_data = File.open(Master.generate_directory_file).read
     S3Liason.stubs(:read).with(Master.directory_key).returns(encrypted_data)
     Master.remote_directory_hash
+    assert false  #should probably assert something useful here
   end
   
   test 'should create initial config file' do
