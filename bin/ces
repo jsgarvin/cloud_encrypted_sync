@@ -1,3 +1,10 @@
 #!/usr/bin/env ruby
-
-puts 'Hello, World!'
+require 'optparse'
+options = {}
+option_parser = OptionParser.new do |opts|
+  opts.on('-n NAME','--name') do |name|
+    options[:name] = name
+  end
+end
+option_parser.parse!
+puts "Hello, #{options[:name] || 'World'}!"
