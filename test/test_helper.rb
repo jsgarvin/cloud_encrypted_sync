@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'bundler/setup'
-require 'mocha'
 require 'simplecov'
 require 'fakefs/safe'
 require 'active_support/test_case'
@@ -52,3 +51,5 @@ class ActiveSupport::TestCase
   end
   
 end
+
+require 'mocha'

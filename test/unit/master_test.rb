@@ -54,18 +54,22 @@ class MasterTest < ActiveSupport::TestCase
     assert_equal({'deleted_file_key' => 'test_sub_folder/deleted_file.txt'},Master.local_files_to_delete)
   end
   
-  test 'should write encrypted directory file to s3' do
+  test 'should send encrypted directory file' do
     encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/folder_snapshot.yml.encrypted"
-    S3Liason.stubs(:write).with(encrypted_file_path,Master.directory_key).returns(true)
+    S3Liason.expects(:write).with(encrypted_file_path,Master.directory_key).returns(true)
     Master.store_directory_hash_file
-    assert false  #should probably assert something useful here
   end
   
-  test 'should read encrypted directory file from s3' do
-    encrypted_data = File.open(Master.generate_directory_file).read
-    S3Liason.stubs(:read).with(Master.directory_key).returns(encrypted_data)
-    Master.remote_directory_hash
-    assert false  #should probably assert something useful here
+  test 'should decrypt remote directory file' do
+    #setup mock data
+    sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
+    Master.stubs(:directory_hash).returns(sample_directory_hash)
+    encrypted_sample = File.open(Master.generate_directory_file).read
+    S3Liason.stubs(:read).with(Master.directory_key).returns(encrypted_sample)
+    
+    #do actual test
+    decrypted_remote_hash = Master.remote_directory_hash
+    assert_equal(sample_directory_hash,decrypted_remote_hash)
   end
   
   test 'should create initial config file' do
