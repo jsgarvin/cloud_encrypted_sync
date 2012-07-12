@@ -85,11 +85,11 @@ class Master
     end
     
     def remote_files_to_delete
-      remote_directory_hash.select{|k,v| !directory_hash.has_key?(k) and last_sync_hash.has_key?(k) }
+      deletable_files_check(remote_directory_hash,directory_hash)
     end
     
     def local_files_to_delete
-      directory_hash.select{|k,v| !remote_directory_hash.has_key?(k) and last_sync_hash.has_key?(k) }
+      deletable_files_check(directory_hash,remote_directory_hash)
     end
     
     def remote_directory_hash
@@ -106,6 +106,10 @@ class Master
     private
     #######
     
+    def deletable_files_check(source_hash,comparison_hash)
+      source_hash.select{|k,v| !comparison_hash.has_key?(k) and last_sync_hash.has_key?(k) }
+    end
+
     def directory_file_path
       "#{data_directory}/folder_snapshot.yml"
     end
