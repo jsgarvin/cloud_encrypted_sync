@@ -77,11 +77,11 @@ class Master
     end
     
     def files_to_push
-      directory_hash.select{|k,v| !last_sync_hash.has_key?(k) and !remote_directory_hash.has_key?(k) }
+      syncable_files_check(directory_hash,remote_directory_hash)
     end
     
     def files_to_pull
-      remote_directory_hash.select{|k,v| !directory_hash.has_key?(k) and !last_sync_hash.has_key?(k) }
+      syncable_files_check(remote_directory_hash,directory_hash)
     end
     
     def remote_files_to_delete
@@ -107,7 +107,15 @@ class Master
     #######
     
     def deletable_files_check(source_hash,comparison_hash)
-      source_hash.select{|k,v| !comparison_hash.has_key?(k) and last_sync_hash.has_key?(k) }
+      combined_file_check(source_hash,comparison_hash,true)
+    end
+
+    def syncable_files_check(source_hash,comparison_hash)
+      combined_file_check(source_hash,comparison_hash,false)
+    end
+
+    def combined_file_check(source_hash,comparison_hash,last_sync_has_key)
+      source_hash.select{|k,v| !comparison_hash.has_key?(k) and (last_sync_has_key ? last_sync_hash.has_key?(k) : !last_sync_hash.has_key?(k)) }
     end
 
     def directory_file_path
