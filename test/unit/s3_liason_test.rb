@@ -1,5 +1,4 @@
 require 'test_helper'
-#require File.expand_path('../../../lib/s3_liason', __FILE__)
 
 class S3LiasonTest < ActiveSupport::TestCase
   
@@ -14,16 +13,16 @@ class S3LiasonTest < ActiveSupport::TestCase
     skip 'S3 credentials for test bucket not provided.' unless Master.config['s3_credentials'].is_a?(Hash) and Master.config['s3_credentials'] != {}
 
     test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
-    hash_key = Cryptographer.hash_file(test_file_path)
+    hash_key = Cryptographer.hash_data(File.open(test_file_path).read)
     assert_equal(0,S3Liason.send(:bucket).objects.count)
-    assert !S3Liason.send(:bucket).objects[Cryptographer.hash_file(test_file_path)].exists?
+    assert !S3Liason.send(:bucket).objects[hash_key].exists?
     
-    S3Liason.write(test_file_path)
+    S3Liason.write(File.open(test_file_path).read)
     
     assert_equal(1,S3Liason.send(:bucket).objects.count)
     assert S3Liason.send(:bucket).objects[hash_key].exists?
     
-    assert_equal(File.open(test_file_path,'rb').read,File.open(S3Liason.read(hash_key),'rb').read)
+    assert_equal(File.open(test_file_path,'rb').read,S3Liason.read(hash_key))
   end
   
   #######

@@ -1,11 +1,11 @@
 require 'test_helper'
-#require File.expand_path('../../../lib/master', __FILE__)
+require 'yaml'
 
 class MasterTest < ActiveSupport::TestCase
   
   test 'should generate directory hash' do
     hash = Master.directory_hash
-    assert_equal({"62f03aac0cdc25500aa99a54d690495e8012d5dde27583fdcf7be76803a76ca4"=>"test_sub_folder/test_file_one.txt"},hash)
+    assert_equal({"19d828911217a736143b0ce84b70cd7e528191005d33f7ca49bd07ba27e20763b4929e790949dad0859cdb7cba67b7daace059bcc7aebef9225eb9e5eaba6264"=>"test_sub_folder/test_file_one.txt"},hash)
   end
   
   test 'should_return_nil_if_never_synced_before' do
@@ -55,17 +55,16 @@ class MasterTest < ActiveSupport::TestCase
   end
   
   test 'should send encrypted directory file' do
-    encrypted_file_path = "#{File.expand_path('../../../temp',  __FILE__)}/folder_snapshot.yml.encrypted"
-    S3Liason.expects(:write).with(encrypted_file_path,Master.directory_key).returns(true)
+    sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
+    Master.stubs(:directory_hash).returns(sample_directory_hash)
+    S3Liason.expects(:write).with(Cryptographer.encrypt_data(sample_directory_hash.to_yaml),Master.directory_key).returns(true)
     Master.store_directory_hash_file
   end
   
   test 'should decrypt remote directory file' do
     #setup mock data
     sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
-    Master.stubs(:directory_hash).returns(sample_directory_hash)
-    encrypted_sample = File.open(Master.generate_directory_file).read
-    S3Liason.stubs(:read).with(Master.directory_key).returns(encrypted_sample)
+    S3Liason.stubs(:read).with(Master.directory_key).returns(Cryptographer.encrypt_data(sample_directory_hash.to_yaml))
     
     #do actual test
     decrypted_remote_hash = Master.remote_directory_hash

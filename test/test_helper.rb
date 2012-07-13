@@ -18,10 +18,6 @@ class ActiveSupport::TestCase
   
   def set_config
     Master.instance_variable_set(:@config, {'encryption_key' => 'asdf', 'initialization_vector' => 'qwerty', 's3_credentials' => {}, 's3_bucket_name' => ''})
-    @temp_folder_path = File.expand_path('../../temp', __FILE__)
-    FileUtils.mkdir_p @temp_folder_path
-    #S3Liason.instance_variable_set(:@bucket_name, 'jsgarvin-cryptiferous-test')
-    #S3Liason.send(:bucket).clear!
     source_dir = File.expand_path('../test_folder',  __FILE__)
     Master.instance_variable_set(:@base_path, source_dir + '/')
     FileUtils.mkdir_p source_dir
@@ -29,12 +25,6 @@ class ActiveSupport::TestCase
     File.open(source_dir + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
       test_file.write('Test File One')
     end
-    Master.instance_variable_set(:@last_sync_hash, nil)
-    Master.instance_variable_set(:@last_sync_date, nil)
-    data_dir = File.expand_path('../data', __FILE__)
-    Master.instance_variable_set(:@data_directory,data_dir)
-    FileUtils.mkdir_p data_dir
-    File.delete(Master.send(:directory_file_path)) if File.exist?(Master.send(:directory_file_path))
   end
   
   def activate_fake_fs

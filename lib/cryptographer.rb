@@ -3,35 +3,21 @@ class Cryptographer
   class << self
     ALGORITHM = 'AES-256-CBC'
     
-    def encrypt_file(path)
-      crypt_file(:encrypt, path)
+    def encrypt_data(data)
+      crypt_data(:encrypt, data)
     end
     
-    def decrypt_file(path)
-      crypt_file(:decrypt, path)
+    def decrypt_data(data)
+      crypt_data(:decrypt, data)
     end
-    
+
     def encrypt_string(string)
-      cipher = setup_cipher(:encrypt)
-      encrypted_string = cipher.update(string)
-      encrypted_string << cipher.final
-      return hash_string(encrypted_string.to_s)
+      encrypted_string = encrypt_data(string)
+      return hash_data(encrypted_string.to_s)
     end
     
-    def hash_string(string)
-      Digest::SHA2.hexdigest(string,512)
-    end
-    
-    def hash_file(path)
-      sha1 = Digest::SHA2.new
-      File.open(path) do |file|
-        buffer = ''
-        while not file.eof
-          file.read(512, buffer)
-          sha1.update(buffer)
-        end
-      end
-      return sha1
+    def hash_data(data)
+      Digest::SHA2.hexdigest(data,512)
     end
     
     #######
@@ -41,26 +27,17 @@ class Cryptographer
     def setup_cipher(crypt)
       cipher = OpenSSL::Cipher::Cipher.new(ALGORITHM)
       cipher.send(crypt)
-      cipher.key = hash_string(Master.config['encryption_key'])
-      cipher.iv = hash_string(Master.config['initialization_vector'])
+      cipher.key = hash_data(Master.config['encryption_key'])
+      cipher.iv = hash_data(Master.config['initialization_vector'])
       return cipher
     end
     
-    def crypt_file(direction,path)
+    def crypt_data(direction,precrypted_data)
       cipher = setup_cipher(direction)
-      crypted_file_path = "#{File.expand_path('../../temp',  __FILE__)}/#{File.basename(path)}.#{direction}ed"
-      
-      File.open(crypted_file_path,'w') do |crypted_file|
-        File.open(File.expand_path(path,  __FILE__),'rb') do |precrypted_file|
-          while data = precrypted_file.read(4096)
-            crypted_file << cipher.update(data)
-          end
-          crypted_file << cipher.final
-        end
-      end
-      return crypted_file_path
+      crypted_data = cipher.update(precrypted_data)
+      crypted_data << cipher.final
+      return crypted_data
     end
-    
   end
   
 end

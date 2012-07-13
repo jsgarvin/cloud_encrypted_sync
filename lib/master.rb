@@ -31,33 +31,14 @@ class Master
           next
         else
           relative_path = this_path.gsub(base_path,'')
-          directory_hash[Cryptographer.hash_file(this_path).to_s] = relative_path
+          directory_hash[Cryptographer.hash_data(File.open(this_path).read).to_s] = relative_path
         end
       end
       return directory_hash
     end
     
     def directory_key
-      @directory_key ||= Cryptographer.hash_string(config['encryption_key'])
-    end
-    
-    def generate_directory_file
-      File.open(directory_file_path, 'w') do |directory_file|
-        directory_file.write(directory_hash.to_yaml)
-      end
-      return Cryptographer.encrypt_file(directory_file_path)
-    end
-    
-    def decrypt_directory_file(data)
-      path = File.expand_path("../../temp/directory_structure.yml.encrypted", __FILE__)
-      File.open(path, 'w') do |directory_file|
-        directory_file.write(data)
-      end
-      decrypted_path = Cryptographer.decrypt_file(path)
-      File.delete(path)
-      hash = YAML.load(File.read(decrypted_path))
-      File.delete(decrypted_path)
-      return hash
+      @directory_key ||= Cryptographer.hash_data(config['encryption_key'])
     end
     
     def base_path
@@ -93,13 +74,11 @@ class Master
     end
     
     def remote_directory_hash
-      decrypt_directory_file(S3Liason.read(directory_key))
+      YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
     end
     
     def store_directory_hash_file
-      encrypted_file_path = generate_directory_file
-      S3Liason.write(encrypted_file_path,directory_key)
-      File.delete(encrypted_file_path)
+      S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
     end
     
     #######
