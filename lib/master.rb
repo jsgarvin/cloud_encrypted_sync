@@ -6,106 +6,107 @@ require 'etc'
 require 'cryptographer'
 require 's3_liason'
 
-
-class Master
-  INITIAL_CONFIG = {:encryption_key => '', :initialization_vector => ''}
-  USER_FOLDER = "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
-  CONFIG_FILE = "#{USER_FOLDER}/config.yml"
-  
-  class << self
+module CloudEncryptedSync
+  class Master
+    INITIAL_CONFIG = {:encryption_key => '', :initialization_vector => ''}
+    USER_FOLDER = "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
+    CONFIG_FILE = "#{USER_FOLDER}/config.yml"
     
-    def config
-      if @config
-        return @config
-      else
-        FileUtils.mkdir_p(USER_FOLDER) unless Dir.exists?(USER_FOLDER)
-        File.open(CONFIG_FILE, 'w') { |config_file| config_file.write(INITIAL_CONFIG.to_yaml) } unless File.exist?(CONFIG_FILE)
-        @config ||= YAML.load_file(CONFIG_FILE)
-      end
-    end
-    
-    def directory_hash
-      directory_hash = {}
-      Find.find(base_path) do |this_path|
-        if FileTest.directory?(this_path)
-          next
+    class << self
+      
+      def config
+        if @config
+          return @config
         else
-          relative_path = this_path.gsub(base_path,'')
-          directory_hash[Cryptographer.hash_data(File.open(this_path).read).to_s] = relative_path
+          FileUtils.mkdir_p(USER_FOLDER) unless Dir.exists?(USER_FOLDER)
+          File.open(CONFIG_FILE, 'w') { |config_file| config_file.write(INITIAL_CONFIG.to_yaml) } unless File.exist?(CONFIG_FILE)
+          @config ||= YAML.load_file(CONFIG_FILE)
         end
       end
-      return directory_hash
-    end
-    
-    def directory_key
-      @directory_key ||= Cryptographer.hash_data(config['encryption_key'])
-    end
-    
-    def base_path
-      if @base_path.nil?
-        @base_path = config['base_path']
-        @base_path += '/' unless @base_path.match(/\/$/)
+      
+      def directory_hash
+        directory_hash = {}
+        Find.find(base_path) do |this_path|
+          if FileTest.directory?(this_path)
+            next
+          else
+            relative_path = this_path.gsub(base_path,'')
+            directory_hash[Cryptographer.hash_data(File.open(this_path).read).to_s] = relative_path
+          end
+        end
+        return directory_hash
       end
-      return @base_path
-    end
-    
-    def last_sync_date
-      @last_sync_date ||= File.exist?(directory_file_path) ? File.stat(directory_file_path).ctime : nil
-    end
-    
-    def last_sync_hash
-      @last_sync_hash ||= File.exist?(directory_file_path) ? YAML.load(File.read(directory_file_path)) : {}
-    end
-    
-    def files_to_push
-      syncable_files_check(directory_hash,remote_directory_hash)
-    end
-    
-    def files_to_pull
-      syncable_files_check(remote_directory_hash,directory_hash)
-    end
-    
-    def remote_files_to_delete
-      deletable_files_check(remote_directory_hash,directory_hash)
-    end
-    
-    def local_files_to_delete
-      deletable_files_check(directory_hash,remote_directory_hash)
-    end
-    
-    def remote_directory_hash
-      YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
-    end
-    
-    def store_directory_hash_file
-      S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
-    end
-    
-    #######
-    private
-    #######
-    
-    def deletable_files_check(source_hash,comparison_hash)
-      combined_file_check(source_hash,comparison_hash,true)
-    end
+      
+      def directory_key
+        @directory_key ||= Cryptographer.hash_data(config['encryption_key'])
+      end
+      
+      def base_path
+        if @base_path.nil?
+          @base_path = config['base_path']
+          @base_path += '/' unless @base_path.match(/\/$/)
+        end
+        return @base_path
+      end
+      
+      def last_sync_date
+        @last_sync_date ||= File.exist?(directory_file_path) ? File.stat(directory_file_path).ctime : nil
+      end
+      
+      def last_sync_hash
+        @last_sync_hash ||= File.exist?(directory_file_path) ? YAML.load(File.read(directory_file_path)) : {}
+      end
+      
+      def files_to_push
+        syncable_files_check(directory_hash,remote_directory_hash)
+      end
+      
+      def files_to_pull
+        syncable_files_check(remote_directory_hash,directory_hash)
+      end
+      
+      def remote_files_to_delete
+        deletable_files_check(remote_directory_hash,directory_hash)
+      end
+      
+      def local_files_to_delete
+        deletable_files_check(directory_hash,remote_directory_hash)
+      end
+      
+      def remote_directory_hash
+        YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
+      end
+      
+      def store_directory_hash_file
+        S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
+      end
+      
+      #######
+      private
+      #######
+      
+      def deletable_files_check(source_hash,comparison_hash)
+        combined_file_check(source_hash,comparison_hash,true)
+      end
 
-    def syncable_files_check(source_hash,comparison_hash)
-      combined_file_check(source_hash,comparison_hash,false)
-    end
+      def syncable_files_check(source_hash,comparison_hash)
+        combined_file_check(source_hash,comparison_hash,false)
+      end
 
-    def combined_file_check(source_hash,comparison_hash,last_sync_has_key)
-      source_hash.select{|k,v| !comparison_hash.has_key?(k) and (last_sync_has_key ? last_sync_hash.has_key?(k) : !last_sync_hash.has_key?(k)) }
-    end
+      def combined_file_check(source_hash,comparison_hash,last_sync_has_key)
+        source_hash.select{|k,v| !comparison_hash.has_key?(k) and (last_sync_has_key ? last_sync_hash.has_key?(k) : !last_sync_hash.has_key?(k)) }
+      end
 
-    def directory_file_path
-      "#{data_directory}/folder_snapshot.yml"
+      def directory_file_path
+        "#{data_directory}/folder_snapshot.yml"
+      end
+      
+      def data_directory
+        return @data_directory if @data_directory
+        @data_directory = "#{ENV['HOME']}/.cloud_encrypted_sync"
+        FileUtils.mkdir_p(@data_directory)
+      end
+      
     end
-    
-    def data_directory
-      return @data_directory if @data_directory
-      @data_directory = "#{ENV['HOME']}/.cloud_encrypted_sync"
-      FileUtils.mkdir_p(@data_directory)
-    end
-    
   end
 end
