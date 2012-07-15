@@ -11,7 +11,7 @@ module CloudEncryptedSync
     
     test 'should write readable encrypted file to s3' do
 
-      skip 'S3 credentials for test bucket not provided.' unless Master.config['s3_credentials'].is_a?(Hash) and Master.config['s3_credentials'] != {}
+      skip 'S3 credentials for test bucket not provided.' unless Master.config[:s3_credentials].is_a?(Array) and Master.config[:s3_credentials] != []
 
       test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
       hash_key = Cryptographer.hash_data(File.open(test_file_path).read)
@@ -37,21 +37,21 @@ module CloudEncryptedSync
     
     def load_s3_credentials
       FakeFS.deactivate!
-      real_config = YAML.load_file(Master::CONFIG_FILE) if File.exist?(Master::CONFIG_FILE)
+      real_config = YAML.load_file(Master.send(:config_file_path)) if File.exist?(Master.send(:config_file_path))
       FakeFS.activate!
       
       if real_config && real_config['s3_credentials']
-        Master.instance_variable_set(:@config, Master.config.merge({ 's3_credentials' => real_config['s3_credentials'] }))
+        Master.instance_variable_set(:@config, Master.config.merge({ :s3_credentials => real_config['s3_credentials'] }))
       end
     end
     
     def create_test_bucket
-      Master.instance_variable_set(:@config, Master.config.merge({ 's3_bucket_name' => "cloud_encrypted_sync_unit_test_bucket_#{Digest::SHA1.hexdigest(rand.to_s)}" }))
-      S3Liason.send(:connection).buckets.create(Master.config['s3_bucket_name'])
+      Master.instance_variable_set(:@config, Master.config.merge({ :s3_bucket => "cloud_encrypted_sync_unit_test_bucket_#{Digest::SHA1.hexdigest(rand.to_s)}" }))
+      S3Liason.send(:connection).buckets.create(Master.config[:s3_bucket])
     end
     
     def delete_test_bucket
-      S3Liason.send(:bucket).delete! unless Master.config['s3_credentials'] == {} or !Master.config['s3_credentials'].is_a?(Hash)
+      S3Liason.send(:bucket).delete! unless Master.config[:s3_credentials] == [] or !Master.config[:s3_credentials].is_a?(Array)
     end
   end
 end

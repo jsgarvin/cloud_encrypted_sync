@@ -4,23 +4,29 @@ require 'simplecov'
 require 'fakefs/safe'
 require 'active_support/test_case'
 require 'test/unit'
+require 'etc'
 
 SimpleCov.start
 
-require 'master'
+require 'cloud_encrypted_sync'
 
 module CloudEncryptedSync
   class ActiveSupport::TestCase
 
     setup :activate_fake_fs
-    setup :set_config
+    setup :setup_environment
     setup :roadblock_s3_liason
     teardown :deactivate_fake_fs
     
-    def set_config
-      Master.instance_variable_set(:@config, {'encryption_key' => 'asdf', 'initialization_vector' => 'qwerty', 's3_credentials' => {}, 's3_bucket_name' => ''})
+    def setup_environment
+      Master.command_line_options = {
+        :encryption_key => 'asdf',
+        :initialization_vector => 'qwerty',
+        :s3_bucket => "ces-test-bucket-#{Etc.hash}",
+        :data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
+      }
       source_dir = File.expand_path('../test_folder',  __FILE__)
-      Master.instance_variable_set(:@base_path, source_dir + '/')
+      Master.instance_variable_set(:@sync_path, source_dir + '/')
       FileUtils.mkdir_p source_dir
       FileUtils.mkdir_p source_dir + '/test_sub_folder'
       File.open(source_dir + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|

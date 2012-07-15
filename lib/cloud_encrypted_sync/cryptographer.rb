@@ -21,15 +21,28 @@ module CloudEncryptedSync
         Digest::SHA2.hexdigest(data,512)
       end
       
+      def generate_random_key
+        initialize_cipher(crypt).random_key.unpack('H*')
+      end
+
+      def generate_random_iv
+        initialize_cipher(crypt).random_iv.unpack('H*')  
+      end
+
       #######
       private
       #######
       
-      def setup_cipher(crypt)
+      def initialize_cipher(crypt)
         cipher = OpenSSL::Cipher::Cipher.new(ALGORITHM)
         cipher.send(crypt)
-        cipher.key = hash_data(Master.config['encryption_key'])
-        cipher.iv = hash_data(Master.config['initialization_vector'])
+        return cipher
+      end
+
+      def setup_cipher(crypt)
+        cipher = initialize_cipher(crypt)
+        cipher.key = hash_data(Master.config[:encryption_key])
+        cipher.iv = hash_data(Master.config[:initialization_vector])
         return cipher
       end
       

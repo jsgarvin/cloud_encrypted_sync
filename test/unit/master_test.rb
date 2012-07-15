@@ -72,12 +72,5 @@ module CloudEncryptedSync
       assert_equal(sample_directory_hash,decrypted_remote_hash)
     end
     
-    test 'should create initial config file' do
-      Master.instance_variable_set(:@config, nil)
-      
-      assert_equal(false,File.exists?(Master::CONFIG_FILE))
-      assert_equal(Master::INITIAL_CONFIG,Master.config)
-      assert_equal(true,File.exists?(Master::CONFIG_FILE))
-    end
   end
 end

@@ -19,12 +19,16 @@ module CloudEncryptedSync
       private
       #######
       
+      def credentials
+        Master.config[:s3_credentials]
+      end
+
       def connection
-        @connection ||= AWS::S3.new(Master.config['s3_credentials'])
+        @connection ||= AWS::S3.new(:access_key_id => credentials[0], :secret_access_key => credentials[1])
       end
       
       def bucket_name
-        @bucket_name ||= Master.config['s3_bucket_name']
+        @bucket_name ||= Master.config[:s3_bucket]
       end
       
       def bucket

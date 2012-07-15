@@ -1,10 +1,46 @@
 #!/usr/bin/env ruby
 require 'optparse'
-options = {}
+require 'etc'
+require File.expand_path('../../lib/cloud_encrypted_sync', __FILE__)
+
+options = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
+executable_name = File.basename($PROGRAM_NAME)
+
 option_parser = OptionParser.new do |opts|
-  opts.on('-n NAME','--name') do |name|
-    options[:name] = name
+  opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
+  opts.on('--data-dir',"Data directory where snapshots and config file are found. Defaults to '#{options[:datadir]}'") do |path|
+    options[:data_dir] = path
+  end
+  opts.on('--s3-credentials ACCESS_KEY_ID,SECRET_ACCESS_KEY', Array, "Credentials for your S3 account." ) do| credentials|
+    options[:s3_credentials] = credentials
+  end
+  opts.on('--s3-bucket', 'Name of bucket to use on S3 (will automatically create bucket on first run).') do |bucket|
+    options[:s3_bucket] = bucket
+  end
+  opts.on('--encryption-key') do |key|
+    options[:encryption_key] = key
+  end
+  opts.on('--initialization-vector') do |vector|
+    options[:initialization_vector] = vector
   end
 end
 option_parser.parse!
-puts "Hello, #{options[:name] || 'World'}!"
+CloudEncryptedSync::Master.command_line_options = options
+
+if ARGV.empty?
+  puts "You must supply a path to a folder to sync."
+  puts
+  puts option_parser.help
+else
+  CloudEncryptedSync::Master.sync_path = ARGV.shift
+  CloudEncryptedSync::Master.config[:encryption_key] ||= ARGV.shift
+  CloudEncryptedSync::Master.config[:initialization_vector] ||= ARGV.shift
+  config = CloudEncryptedSync::Master.config
+  if config[:encryption_key].nil? or config[:encryption_key].empty? or config[:initialization_vector].nil? or config[:initialization_vector].empty?
+    puts "You must supply an encryption key and initialization vector."
+    puts
+    puts option_parser.help
+  else
+    puts 'Ready!'
+  end
+end
