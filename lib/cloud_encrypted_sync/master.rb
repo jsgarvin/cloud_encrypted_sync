@@ -61,6 +61,10 @@ module CloudEncryptedSync
         syncable_files_check(directory_hash,remote_directory_hash)
       end
       
+      def push_files!
+        files_to_push.each_pair {|key,path| puts "Pushing: #{path}"; S3Liason.write(File.read(sync_path+'/'+path),key) }
+      end
+
       def files_to_pull
         syncable_files_check(remote_directory_hash,directory_hash)
       end
@@ -74,13 +78,22 @@ module CloudEncryptedSync
       end
       
       def remote_directory_hash
-        YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
+        begin
+          YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
+        rescue AWS::S3::Errors::NoSuchKey
+          {}
+        end
       end
       
       def store_directory_hash_file
         S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
       end
       
+      def finalize!
+        store_directory_hash_file
+        File.open(snapshot_file_path, 'w') { |file| YAML.dump(directory_hash, file) }
+      end
+
       #######
       private
       #######

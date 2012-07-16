@@ -14,7 +14,7 @@ option_parser = OptionParser.new do |opts|
   opts.on('--s3-credentials ACCESS_KEY_ID,SECRET_ACCESS_KEY', Array, "Credentials for your S3 account." ) do| credentials|
     options[:s3_credentials] = credentials
   end
-  opts.on('--s3-bucket', 'Name of bucket to use on S3 (will automatically create bucket on first run).') do |bucket|
+  opts.on('--s3-bucket', 'Name of bucket to use on S3.') do |bucket|
     options[:s3_bucket] = bucket
   end
   opts.on('--encryption-key') do |key|
@@ -41,6 +41,8 @@ else
     puts
     puts option_parser.help
   else
-    puts 'Ready!'
+    puts CloudEncryptedSync::Master.config.inspect
+    CloudEncryptedSync::Master.push_files!
+    CloudEncryptedSync::Master.finalize!
   end
 end
