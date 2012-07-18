@@ -41,8 +41,9 @@ else
     puts
     puts option_parser.help
   else
-    CloudEncryptedSync::Master.delete_remote_files!
     CloudEncryptedSync::Master.push_files!
+    CloudEncryptedSync::Master.pull_files!
+    CloudEncryptedSync::Master.delete_remote_files!
     CloudEncryptedSync::Master.finalize!
   end
 end

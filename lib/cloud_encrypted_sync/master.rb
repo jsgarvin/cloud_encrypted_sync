@@ -68,7 +68,11 @@ module CloudEncryptedSync
       def files_to_pull
         syncable_files_check(remote_directory_hash,directory_hash)
       end
-      
+
+      def pull_files!
+        files_to_pull.each_pair {|key,path| puts "Pulling: #{path}"; File.write(sync_path+'/'+path,S3Liason.read(key)) }
+      end
+
       def remote_files_to_delete
         deletable_files_check(remote_directory_hash,directory_hash)
       end
