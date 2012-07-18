@@ -32,7 +32,7 @@ module CloudEncryptedSync
             next
           else
             relative_path = this_path.gsub(sync_path,'')
-            directory_hash[Cryptographer.hash_data(File.open(this_path).read).to_s] = relative_path
+            directory_hash[Cryptographer.hash_data(relative_path + File.open(this_path).read).to_s] = relative_path
           end
         end
         return directory_hash
@@ -73,6 +73,10 @@ module CloudEncryptedSync
         deletable_files_check(remote_directory_hash,directory_hash)
       end
       
+      def delete_remote_files!
+        remote_files_to_delete.each_pair{|key,path| puts "Deleting Remote: #{path}"; S3Liason.delete(key) }
+      end
+
       def local_files_to_delete
         deletable_files_check(directory_hash,remote_directory_hash)
       end

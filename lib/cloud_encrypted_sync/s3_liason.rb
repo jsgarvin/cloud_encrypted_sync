@@ -15,6 +15,10 @@ module CloudEncryptedSync
         Cryptographer.decrypt_data(bucket.objects[key].read)
       end
       
+      def delete(key)
+        bucket.objects[key].delete
+      end
+
       #######
       private
       #######
