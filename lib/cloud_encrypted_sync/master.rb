@@ -70,7 +70,14 @@ module CloudEncryptedSync
       end
 
       def pull_files!
-        files_to_pull.each_pair {|key,path| puts "Pulling: #{path}"; File.write(sync_path+'/'+path,S3Liason.read(key)) }
+        files_to_pull.each_pair do |key,path|
+          puts "Pulling: #{path}"
+          begin
+            File.write(sync_path+'/'+path,S3Liason.read(key))
+          rescue AWS::S3::Errors::NoSuchKey
+            puts "Failed to pull #{path}"
+          end
+        end
       end
 
       def remote_files_to_delete
@@ -84,7 +91,11 @@ module CloudEncryptedSync
       def local_files_to_delete
         deletable_files_check(directory_hash,remote_directory_hash)
       end
-      
+
+      def delete_local_files!
+        local_files_to_delete.each_pair{|key,path| puts "Deleting Local: #{path}"; File.delete(sync_path+'/'+path) }
+      end
+
       def remote_directory_hash
         begin
           YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
