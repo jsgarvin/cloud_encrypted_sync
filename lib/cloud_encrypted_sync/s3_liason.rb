@@ -19,6 +19,10 @@ module CloudEncryptedSync
         bucket.objects[key].delete
       end
 
+      def key_exists?(key)
+        bucket.objects[key].exists?
+      end
+      
       #######
       private
       #######

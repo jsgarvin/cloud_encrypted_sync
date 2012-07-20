@@ -6,7 +6,7 @@ module CloudEncryptedSync
   class Master
     
     class << self
-      attr_accessor :command_line_options
+      attr_accessor :command_line_options, :finalize_required
       attr_writer   :sync_path
 
       def config
@@ -17,7 +17,6 @@ module CloudEncryptedSync
           FileUtils.mkdir_p(data_folder_path) unless Dir.exists?(data_folder_path)
           @config = YAML.load_file(config_file_path) if File.exist?(config_file_path)
           @config.merge!(command_line_options)
-          #symbolize keys
           @config = @config.inject({}) do |options, (key, value)|
             options[(key.to_sym rescue key) || key] = value
             options
@@ -26,18 +25,21 @@ module CloudEncryptedSync
       end
       
       def directory_hash
-        directory_hash = {}
-        Find.find(sync_path) do |this_path|
-          if FileTest.directory?(this_path)
+        return @directory_hash if @directory_hash
+        @directory_hash = {}
+        puts "Compiling Directory Analysis"
+        Find.find(sync_path) do |path|
+          if FileTest.directory?(path)
             next
           else
-            relative_path = this_path.gsub(sync_path,'')
-            directory_hash[Cryptographer.hash_data(relative_path + File.open(this_path).read).to_s] = relative_path
+            @directory_hash[file_key(path)] = relative_file_path(path)
           end
         end
-        return directory_hash
+        return @directory_hash
       end
       
+      
+
       def directory_key
         @directory_key ||= Cryptographer.hash_data(config[:encryption_key])
       end
@@ -62,7 +64,16 @@ module CloudEncryptedSync
       end
       
       def push_files!
-        files_to_push.each_pair {|key,path| puts "Pushing: #{path}"; S3Liason.write(File.read(sync_path+'/'+path),key) }
+        files_to_push.each_pair  do |key,relative_path| 
+          if S3Liason.key_exists?(key)
+            #already exists. probably left over from an earlier aborted push
+            puts "Not Pushing (already exists): #{relative_path}"
+          else
+            puts "Pushing: #{relative_path}"
+            S3Liason.write(File.read(full_file_path(relative_path)),key)
+            self.finalize_required = true
+          end
+        end
       end
 
       def files_to_pull
@@ -70,12 +81,20 @@ module CloudEncryptedSync
       end
 
       def pull_files!
-        files_to_pull.each_pair do |key,path|
-          puts "Pulling: #{path}"
-          begin
-            File.write(sync_path+'/'+path,S3Liason.read(key))
-          rescue AWS::S3::Errors::NoSuchKey
-            puts "Failed to pull #{path}"
+        files_to_pull.each_pair do |key,relative_path|
+          full_path = full_file_path(relative_path)
+          if File.exist?(full_path) and (file_key(full_path) == key)
+            #already exists. probably left over from an earlier aborted pull
+            puts "Not Pulling (already exists): #{path}"
+          else
+            Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
+            puts "Pulling: #{relative_path}"
+            begin
+              File.write(full_path,S3Liason.read(key))
+              self.finalize_required = true
+            rescue AWS::S3::Errors::NoSuchKey
+              puts "Failed to pull #{relative_path}"
+            end
           end
         end
       end
@@ -85,7 +104,11 @@ module CloudEncryptedSync
       end
       
       def delete_remote_files!
-        remote_files_to_delete.each_pair{|key,path| puts "Deleting Remote: #{path}"; S3Liason.delete(key) }
+        remote_files_to_delete.each_pair do |key,path|
+          puts "Deleting Remote: #{path}"
+          S3Liason.delete(key)
+          self.finalize_required = true
+        end
       end
 
       def local_files_to_delete
@@ -93,11 +116,20 @@ module CloudEncryptedSync
       end
 
       def delete_local_files!
-        local_files_to_delete.each_pair{|key,path| puts "Deleting Local: #{path}"; File.delete(sync_path+'/'+path) }
+        local_files_to_delete.each_pair do |key,relative_path| 
+          full_path = full_file_path(relative_path)
+          if !File.exist?(full_path) or (file_key(full_path) == key)
+            puts "Not Deleting Local: #{relative_path}"
+          else
+            puts "Deleting Local: #{relative_path}"
+            File.delete(full_path)
+            self.finalize_required = true
+          end
+        end
       end
 
       def remote_directory_hash
-        begin
+        @remote_directory_hash ||= begin
           YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
         rescue AWS::S3::Errors::NoSuchKey
           {}
@@ -105,12 +137,15 @@ module CloudEncryptedSync
       end
       
       def store_directory_hash_file
+        @directory_hash = nil #force re-compile before pushing to remote
         S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
       end
       
       def finalize!
-        store_directory_hash_file
-        File.open(snapshot_file_path, 'w') { |file| YAML.dump(directory_hash, file) }
+        if finalize_required
+          store_directory_hash_file
+          File.open(snapshot_file_path, 'w') { |file| YAML.dump(directory_hash, file) }
+        end
       end
 
       #######
@@ -144,7 +179,18 @@ module CloudEncryptedSync
       def config_file_path
         data_folder_path+'/config.rc.yml'
       end
+      
+      def file_key(full_path)
+        Cryptographer.hash_data(relative_file_path(full_path) + File.open(full_path).read).to_s
+      end
 
+      def relative_file_path(full_path)
+        full_path.gsub(sync_path,'')
+      end
+
+      def full_file_path(relative_path)
+        sync_path+'/'+relative_path
+      end
     end
   end
 end
