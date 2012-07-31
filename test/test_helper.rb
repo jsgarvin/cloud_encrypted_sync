@@ -19,12 +19,12 @@ module CloudEncryptedSync
     teardown :deactivate_fake_fs
     
     def setup_environment
-      Master.command_line_options = {
+      Master.instance_variable_set(:@command_line_options, {
         :encryption_key => 'asdf',
         :initialization_vector => 'qwerty',
         :s3_bucket => "ces-test-bucket-#{Etc.hash}",
         :data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
-      }
+      })
       source_dir = File.expand_path('../test_folder',  __FILE__)
       Master.instance_variable_set(:@sync_path, source_dir + '/')
       FileUtils.mkdir_p source_dir

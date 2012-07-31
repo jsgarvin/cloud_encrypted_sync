@@ -6,7 +6,8 @@ module CloudEncryptedSync
   class Master
     
     class << self
-      attr_accessor :command_line_options, :finalize_required
+      attr_accessor :finalize_required
+      attr_reader   :command_line_options
       attr_writer   :sync_path
 
       def config
@@ -24,6 +25,32 @@ module CloudEncryptedSync
         end
       end
       
+      def parse_command_line_options
+        return if @command_line_options
+        @command_line_options = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
+
+        option_parser = OptionParser.new do |opts|
+          opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
+          opts.on('--data-dir PATH',"Data directory where snapshots and config file are found. Defaults to '#{options[:datadir]}'") do |path|
+            @command_line_options[:data_dir] = path
+          end
+          opts.on('--s3-credentials ACCESS_KEY_ID,SECRET_ACCESS_KEY', Array, "Credentials for your S3 account." ) do| credentials|
+            @command_line_options[:s3_credentials] = credentials
+          end
+          opts.on('--s3-bucket BUCKETNAME', 'Name of bucket to use on S3.') do |bucket|
+            @command_line_options[:s3_bucket] = bucket
+          end
+          opts.on('--encryption-key KEY') do |key|
+            @command_line_options[:encryption_key] = key
+          end
+          opts.on('--initialization-vector VECTOR') do |vector|
+            @command_line_options[:initialization_vector] = vector
+          end
+        end
+        option_parser.parse!
+      end
+
+
       def directory_hash
         return @directory_hash if @directory_hash
         @directory_hash = {}

@@ -6,7 +6,8 @@ module CloudEncryptedSync
     
     test 'should generate directory hash' do
       hash = Master.directory_hash
-      assert_equal({"19d828911217a736143b0ce84b70cd7e528191005d33f7ca49bd07ba27e20763b4929e790949dad0859cdb7cba67b7daace059bcc7aebef9225eb9e5eaba6264"=>"test_sub_folder/test_file_one.txt"},hash)
+      assert_equal(1,hash.keys.size)
+      assert_equal('test_sub_folder/test_file_one.txt',hash[hash.keys.first])
     end
     
     test 'should_return_nil_if_never_synced_before' do
