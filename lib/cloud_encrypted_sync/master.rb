@@ -50,6 +50,26 @@ module CloudEncryptedSync
         option_parser.parse!
       end
 
+      def sync!(&block)
+        option_parser = parse_command_line_options
+        if ARGV.empty?
+          puts "You must supply a path to a folder to sync."
+          puts
+          puts option_parser.help
+        else
+          CloudEncryptedSync::Master.sync_path = ARGV.shift
+          CloudEncryptedSync::Master.config[:encryption_key] ||= ARGV.shift
+          CloudEncryptedSync::Master.config[:initialization_vector] ||= ARGV.shift
+          config = CloudEncryptedSync::Master.config
+          if config[:encryption_key].nil? or config[:encryption_key].empty? or config[:initialization_vector].nil? or config[:initialization_vector].empty?
+            puts "You must supply an encryption key and initialization vector."
+            puts
+            puts option_parser.help
+          else
+            block.call
+          end
+        end
+      end
 
       def directory_hash
         return @directory_hash if @directory_hash

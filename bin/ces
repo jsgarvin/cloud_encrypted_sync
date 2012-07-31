@@ -6,24 +6,10 @@ require File.expand_path('../../lib/cloud_encrypted_sync', __FILE__)
 executable_name = File.basename($PROGRAM_NAME)
 CloudEncryptedSync::Master.parse_command_line_options
 
-if ARGV.empty?
-  puts "You must supply a path to a folder to sync."
-  puts
-  puts option_parser.help
-else
-  CloudEncryptedSync::Master.sync_path = ARGV.shift
-  CloudEncryptedSync::Master.config[:encryption_key] ||= ARGV.shift
-  CloudEncryptedSync::Master.config[:initialization_vector] ||= ARGV.shift
-  config = CloudEncryptedSync::Master.config
-  if config[:encryption_key].nil? or config[:encryption_key].empty? or config[:initialization_vector].nil? or config[:initialization_vector].empty?
-    puts "You must supply an encryption key and initialization vector."
-    puts
-    puts option_parser.help
-  else
-    CloudEncryptedSync::Master.delete_local_files!
-    CloudEncryptedSync::Master.delete_remote_files!
-    CloudEncryptedSync::Master.pull_files!
-    CloudEncryptedSync::Master.push_files!
-    CloudEncryptedSync::Master.finalize!
-  end
+CloudEncryptedSync::Mater.sync! do
+  CloudEncryptedSync::Master.delete_local_files!
+  CloudEncryptedSync::Master.delete_remote_files!
+  CloudEncryptedSync::Master.pull_files!
+  CloudEncryptedSync::Master.push_files!
+  CloudEncryptedSync::Master.finalize!
 end
