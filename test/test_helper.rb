@@ -13,6 +13,7 @@ require 'cloud_encrypted_sync'
 module CloudEncryptedSync
   class ActiveSupport::TestCase
 
+    S3_LIASON_STUBBABLE_METHODS = [:write,:read,:key_exists?]
     setup :activate_fake_fs
     setup :setup_environment
     setup :roadblock_s3_liason
@@ -45,8 +46,9 @@ module CloudEncryptedSync
     end
 
     def roadblock_s3_liason
-      S3Liason.stubs(:write).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
-      S3Liason.stubs(:read).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
+      S3_LIASON_STUBBABLE_METHODS.each do |method_name|
+        S3Liason.stubs(method_name).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
+      end
     end
 
     def capture_stdout

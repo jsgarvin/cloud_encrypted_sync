@@ -115,6 +115,8 @@ module CloudEncryptedSync
       end
 
       def push_files!
+        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pushing Files: ')
+        pushed_files_counter = 0
         files_to_push.each_pair  do |key,relative_path|
           if S3Liason.key_exists?(key)
             #already exists. probably left over from an earlier aborted push
@@ -124,6 +126,8 @@ module CloudEncryptedSync
             S3Liason.write(File.read(full_file_path(relative_path)),key)
             self.finalize_required = true
           end
+          pushed_files_counter += 1
+          print progress_meter.update(pushed_files_counter)
         end
       end
 
