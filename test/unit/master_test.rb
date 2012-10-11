@@ -30,6 +30,19 @@ module CloudEncryptedSync
       assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Master.files_to_pull)
     end
 
+    test 'should pull files' do
+      Master.stubs(:remote_directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
+      Master.stubs(:directory_hash).returns({})
+      Master.stubs(:last_sync_hash).returns({})
+      S3Liason.expects(:read).with('new_file_key').returns(Cryptographer.encrypt_data('foobar'))
+      assert_equal('',$stdout.string)
+
+      assert_difference('Dir["#{Master.sync_path}/**/*"].length') do
+        Master.pull_files!
+      end
+      assert_match(/\% Complete/,$stdout.string)
+    end
+
     test 'should only want to push new files on later run' do
       Master.stubs(:remote_directory_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
       Master.stubs(:directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})

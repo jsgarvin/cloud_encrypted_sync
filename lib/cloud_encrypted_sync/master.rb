@@ -132,6 +132,8 @@ module CloudEncryptedSync
       end
 
       def pull_files!
+        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
+        pulled_files_counter = 0
         files_to_pull.each_pair do |key,relative_path|
           full_path = full_file_path(relative_path)
           if File.exist?(full_path) and (file_key(full_path) == key)
@@ -141,12 +143,14 @@ module CloudEncryptedSync
             Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
             puts "Pulling: #{relative_path}"
             begin
-              File.write(full_path,S3Liason.read(key))
+              File.open(full_path,'w') { |file| file.write(S3Liason.read(key)) }
               self.finalize_required = true
             rescue AWS::S3::Errors::NoSuchKey
               puts "Failed to pull #{relative_path}"
             end
           end
+          pulled_files_counter += 1
+          print progress_meter.update(pulled_files_counter)
         end
       end
 
