@@ -75,15 +75,10 @@ module CloudEncryptedSync
       def directory_hash
         return @directory_hash if @directory_hash
         @directory_hash = {}
-        total_files = Dir["#{sync_path}/**/*"].length
+        progress_meter = ProgressMeter.new(Dir["#{sync_path}/**/*"].length,:label => 'Compiling Directory Analysis: ')
         completed_files = 0
-        start_time = Time.now
         Find.find(sync_path) do |path|
-          percent_completed = (completed_files/total_files.to_f)*100
-          time_elapsed = Time.now - start_time
-          estimated_finish_time = percent_completed > 0 ? start_time + ((100/percent_completed)*time_elapsed) : start_time + 3600
-          time_remaining = Time.at(estimated_finish_time - Time.now)
-          printf("\rCompiling Directory Analysis: %0.1f%% Complete. Remaining %s", percent_completed, time_remaining.strftime('%M:%S'))
+          print progress_meter.update(completed_files)
           if FileTest.directory?(path)
             completed_files += 1
             next
@@ -95,8 +90,6 @@ module CloudEncryptedSync
         puts
         return @directory_hash
       end
-
-
 
       def directory_key
         @directory_key ||= Cryptographer.hash_data(config[:encryption_key])
