@@ -13,15 +13,17 @@ require 'cloud_encrypted_sync'
 module CloudEncryptedSync
   class ActiveSupport::TestCase
 
-    S3_LIASON_STUBBABLE_METHODS = [:write,:read,:key_exists?]
+    S3_LIASON_STUBBABLE_METHODS = [:red,:write,:delete,:key_exists?]
+
     setup :activate_fake_fs
-    setup :setup_environment
+    setup :preset_environment
     setup :roadblock_s3_liason
     setup :capture_stdout
     teardown :deactivate_fake_fs
     teardown :release_stdout
 
-    def setup_environment
+    def preset_environment
+      Master.instance_variable_set(:@config,nil)
       Master.instance_variable_set(:@command_line_options, {
         :encryption_key => 'asdf',
         :initialization_vector => 'qwerty',
@@ -30,6 +32,7 @@ module CloudEncryptedSync
       })
       source_dir = File.expand_path('../test_folder',  __FILE__)
       Master.instance_variable_set(:@sync_path, source_dir + '/')
+      Master.instance_variable_set(:@directory_hash, nil)
       FileUtils.mkdir_p source_dir
       FileUtils.mkdir_p source_dir + '/test_sub_folder'
       File.open(source_dir + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
@@ -39,6 +42,7 @@ module CloudEncryptedSync
 
     def activate_fake_fs
       FakeFS.activate!
+      FakeFS::FileSystem.clear
     end
 
     def deactivate_fake_fs
@@ -47,7 +51,7 @@ module CloudEncryptedSync
 
     def roadblock_s3_liason
       S3_LIASON_STUBBABLE_METHODS.each do |method_name|
-        S3Liason.stubs(method_name).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
+        S3Liason.stubs(method_name).raises(RuntimeError, "You're supposed to stub out S3Liason.#{method_name}(), jerky boy.")
       end
     end
 

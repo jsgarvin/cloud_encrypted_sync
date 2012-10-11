@@ -9,22 +9,28 @@ module CloudEncryptedSync
 
     teardown :delete_test_bucket
 
-    test 'should write readable encrypted file to s3' do
+    test 'should write readable encrypted file to s3 and then delete it' do
 
       skip 'S3 credentials for test bucket not provided.' unless Master.config[:s3_credentials].is_a?(Array) and Master.config[:s3_credentials] != []
 
       test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
       hash_key = Cryptographer.hash_data(File.open(test_file_path).read)
-      assert_equal(0,S3Liason.send(:bucket).objects.count)
-      assert !S3Liason.send(:bucket).objects[hash_key].exists?
 
-      S3Liason.write(File.open(test_file_path).read)
-
-      assert_equal(1,S3Liason.send(:bucket).objects.count)
-      assert S3Liason.send(:bucket).objects[hash_key].exists?
+      assert !S3Liason.key_exists?(hash_key)
+      assert_difference('S3Liason.send(:bucket).objects.count') do
+        S3Liason.write(File.open(test_file_path).read)
+      end
+      assert S3Liason.key_exists?(hash_key)
 
       assert_equal(File.open(test_file_path,'rb').read,S3Liason.read(hash_key))
+
+      assert_difference('S3Liason.send(:bucket).objects.count',-1) do
+        S3Liason.delete(hash_key)
+      end
+      assert !S3Liason.key_exists?(hash_key)
+
     end
+
 
     #######
     private

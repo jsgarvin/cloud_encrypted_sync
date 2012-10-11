@@ -30,7 +30,7 @@ module CloudEncryptedSync
         executable_name = File.basename($PROGRAM_NAME)
         @command_line_options = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
 
-        option_parser = OptionParser.new do |opts|
+        @option_parser = OptionParser.new do |opts|
           opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
           opts.on('--data-dir PATH',"Data directory where snapshots and config file are found.") do |path|
             @command_line_options[:data_dir] = path
@@ -48,7 +48,8 @@ module CloudEncryptedSync
             @command_line_options[:initialization_vector] = vector
           end
         end
-        option_parser.parse!
+        @option_parser.parse!
+        return @option_parser
       end
 
       def sync!(&block)
@@ -71,6 +72,78 @@ module CloudEncryptedSync
           end
         end
       end
+
+      def push_files!
+        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pushing Files: ')
+        pushed_files_counter = 0
+        files_to_push.each_pair  do |key,relative_path|
+          if S3Liason.key_exists?(key)
+            #already exists. probably left over from an earlier aborted push
+            puts "Not Pushing (already exists): #{relative_path}"
+          else
+            puts "Pushing: #{relative_path}"
+            S3Liason.write(File.read(full_file_path(relative_path)),key)
+            self.finalize_required = true
+          end
+          pushed_files_counter += 1
+          print progress_meter.update(pushed_files_counter)
+        end
+      end
+
+      def pull_files!
+        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
+        pulled_files_counter = 0
+        files_to_pull.each_pair do |key,relative_path|
+          full_path = full_file_path(relative_path)
+          if File.exist?(full_path) and (file_key(full_path) == key)
+            #already exists. probably left over from an earlier aborted pull
+            puts "Not Pulling (already exists): #{path}"
+          else
+            Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
+            puts "Pulling: #{relative_path}"
+            begin
+              File.open(full_path,'w') { |file| file.write(S3Liason.read(key)) }
+              self.finalize_required = true
+            rescue AWS::S3::Errors::NoSuchKey
+              puts "Failed to pull #{relative_path}"
+            end
+          end
+          pulled_files_counter += 1
+          print progress_meter.update(pulled_files_counter)
+        end
+      end
+
+      def delete_remote_files!
+        remote_files_to_delete.each_pair do |key,path|
+          puts "Deleting Remote: #{path}"
+          S3Liason.delete(key)
+          self.finalize_required = true
+        end
+      end
+
+      def delete_local_files!
+        local_files_to_delete.each_pair do |key,relative_path|
+          full_path = full_file_path(relative_path)
+          if !File.exist?(full_path) or (file_key(full_path) == key)
+            puts "Not Deleting Local: #{relative_path}"
+          else
+            puts "Deleting Local: #{relative_path}"
+            File.delete(full_path)
+            self.finalize_required = true
+          end
+        end
+      end
+
+      def finalize!
+        if finalize_required
+          store_directory_hash_file
+          File.open(snapshot_file_path, 'w') { |file| YAML.dump(directory_hash, file) }
+        end
+      end
+
+      #######
+      private
+      #######
 
       def directory_hash
         return @directory_hash if @directory_hash
@@ -114,77 +187,16 @@ module CloudEncryptedSync
         syncable_files_check(directory_hash,remote_directory_hash)
       end
 
-      def push_files!
-        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pushing Files: ')
-        pushed_files_counter = 0
-        files_to_push.each_pair  do |key,relative_path|
-          if S3Liason.key_exists?(key)
-            #already exists. probably left over from an earlier aborted push
-            puts "Not Pushing (already exists): #{relative_path}"
-          else
-            puts "Pushing: #{relative_path}"
-            S3Liason.write(File.read(full_file_path(relative_path)),key)
-            self.finalize_required = true
-          end
-          pushed_files_counter += 1
-          print progress_meter.update(pushed_files_counter)
-        end
-      end
-
       def files_to_pull
         syncable_files_check(remote_directory_hash,directory_hash)
-      end
-
-      def pull_files!
-        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
-        pulled_files_counter = 0
-        files_to_pull.each_pair do |key,relative_path|
-          full_path = full_file_path(relative_path)
-          if File.exist?(full_path) and (file_key(full_path) == key)
-            #already exists. probably left over from an earlier aborted pull
-            puts "Not Pulling (already exists): #{path}"
-          else
-            Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
-            puts "Pulling: #{relative_path}"
-            begin
-              File.open(full_path,'w') { |file| file.write(S3Liason.read(key)) }
-              self.finalize_required = true
-            rescue AWS::S3::Errors::NoSuchKey
-              puts "Failed to pull #{relative_path}"
-            end
-          end
-          pulled_files_counter += 1
-          print progress_meter.update(pulled_files_counter)
-        end
       end
 
       def remote_files_to_delete
         deletable_files_check(remote_directory_hash,directory_hash)
       end
 
-      def delete_remote_files!
-        remote_files_to_delete.each_pair do |key,path|
-          puts "Deleting Remote: #{path}"
-          S3Liason.delete(key)
-          self.finalize_required = true
-        end
-      end
-
       def local_files_to_delete
         deletable_files_check(directory_hash,remote_directory_hash)
-      end
-
-      def delete_local_files!
-        local_files_to_delete.each_pair do |key,relative_path|
-          full_path = full_file_path(relative_path)
-          if !File.exist?(full_path) or (file_key(full_path) == key)
-            puts "Not Deleting Local: #{relative_path}"
-          else
-            puts "Deleting Local: #{relative_path}"
-            File.delete(full_path)
-            self.finalize_required = true
-          end
-        end
       end
 
       def remote_directory_hash
@@ -199,17 +211,6 @@ module CloudEncryptedSync
         @directory_hash = nil #force re-compile before pushing to remote
         S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
       end
-
-      def finalize!
-        if finalize_required
-          store_directory_hash_file
-          File.open(snapshot_file_path, 'w') { |file| YAML.dump(directory_hash, file) }
-        end
-      end
-
-      #######
-      private
-      #######
 
       def deletable_files_check(source_hash,comparison_hash)
         combined_file_check(source_hash,comparison_hash,true)
