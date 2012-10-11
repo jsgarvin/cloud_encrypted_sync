@@ -10,6 +10,10 @@ module CloudEncryptedSync
       @start_time = Time.now
     end
 
+    def to_s
+      sprintf("\r#{label}%0.1f%% Complete. Time Remaining %s", percent_completed, estimated_time_remaining.strftime('%M:%S'))
+    end
+
     def percent_completed
       (completed_index/max_index)*100
     end
@@ -26,17 +30,14 @@ module CloudEncryptedSync
       end
     end
 
-    def time_remaining
+    def estimated_time_remaining
       Time.at(estimated_finish_time - Time.now)
     end
 
     def update(completed_index)
       self.completed_index = completed_index
-      return progress_string
+      return self
     end
 
-    def progress_string
-      sprintf("\r#{label}%0.1f%% Complete. Time Remaining %s", percent_completed, time_remaining.strftime('%M:%S'))
-    end
   end
 end

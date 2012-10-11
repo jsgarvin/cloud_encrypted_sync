@@ -16,8 +16,10 @@ module CloudEncryptedSync
     setup :activate_fake_fs
     setup :setup_environment
     setup :roadblock_s3_liason
+    setup :capture_stdout
     teardown :deactivate_fake_fs
-    
+    teardown :release_stdout
+
     def setup_environment
       Master.instance_variable_set(:@command_line_options, {
         :encryption_key => 'asdf',
@@ -33,20 +35,28 @@ module CloudEncryptedSync
         test_file.write('Test File One')
       end
     end
-    
+
     def activate_fake_fs
       FakeFS.activate!
     end
-    
+
     def deactivate_fake_fs
       FakeFS.deactivate!
     end
-    
+
     def roadblock_s3_liason
       S3Liason.stubs(:write).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
       S3Liason.stubs(:read).raises(RuntimeError, "You're supposed to stub out S3Liason methods, jerky boy.")
     end
-    
+
+    def capture_stdout
+      @stdout_original = $stdout
+      $stdout = StringIO.new
+    end
+
+    def release_stdout
+      $stdout = @stdout_original
+    end
   end
 end
 require 'mocha'
