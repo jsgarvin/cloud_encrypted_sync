@@ -119,7 +119,7 @@ module CloudEncryptedSync
       Master.instance_variable_set(:@command_line_options,nil)
       Object.send(:remove_const,:ARGV)
       ::ARGV = '--s3-bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters --initialization-vector asdfg --s3-credentials access_key_id,access_key'.split(/\s/)
-      Master.parse_command_line_options
+      Master.send(:parse_command_line_options)
       clo = Master.instance_variable_get(:@command_line_options)
       assert_equal('foobar',clo[:s3_bucket])
       assert_equal('~/test/folder',clo[:data_dir])
@@ -134,7 +134,7 @@ module CloudEncryptedSync
       ::ARGV = '--s3-bucket foobar'.split(/\s/)
       assert_equal('',$stdout.string)
       Master.expects(:pull_files).never
-      Master.sync! { Master.pull_files! }
+      Master.sync!
       assert_match(/You must supply a path/,$stdout.string)
     end
 
@@ -145,7 +145,7 @@ module CloudEncryptedSync
       ::ARGV = '--s3-bucket foobar /some/path/to/sync'.split(/\s/)
       assert_equal('',$stdout.string)
       Master.expects(:pull_files!).never
-      Master.sync! { Master.pull_files! }
+      Master.sync!
       assert_match(/You must supply an encryption key and initialization vector/,$stdout.string)
     end
 
@@ -154,8 +154,12 @@ module CloudEncryptedSync
       Master.instance_variable_set(:@command_line_options,nil)
       Object.send(:remove_const,:ARGV)
       ::ARGV = '--s3-bucket foobar --encryption-key mykey --initialization-vector vector /some/path/to/sync'.split(/\s/)
+      Master.expects(:delete_local_files!).returns(true).once
+      Master.expects(:delete_remote_files!).returns(true).once
       Master.expects(:pull_files!).returns(true).once
-      Master.sync! { Master.pull_files! }
+      Master.expects(:push_files!).returns(true).once
+      Master.expects(:finalize!).returns(true).once
+      Master.sync!
     end
   end
 end

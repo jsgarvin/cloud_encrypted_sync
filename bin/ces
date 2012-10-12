@@ -3,12 +3,4 @@ require 'optparse'
 require 'etc'
 require File.expand_path('../../lib/cloud_encrypted_sync', __FILE__)
 
-CloudEncryptedSync::Master.parse_command_line_options
-
-CloudEncryptedSync::Master.sync! do
-  CloudEncryptedSync::Master.delete_local_files!
-  CloudEncryptedSync::Master.delete_remote_files!
-  CloudEncryptedSync::Master.pull_files!
-  CloudEncryptedSync::Master.push_files!
-  CloudEncryptedSync::Master.finalize!
-end
+CloudEncryptedSync::Master.sync!

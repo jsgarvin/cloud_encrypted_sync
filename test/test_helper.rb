@@ -55,14 +55,21 @@ module CloudEncryptedSync
       end
     end
 
+    #Capture STDOUT from program for testing and not cluttering test output
     def capture_stdout
-      @stdout_original = $stdout
+      @stdout = $stdout
       $stdout = StringIO.new
     end
 
     def release_stdout
-      $stdout = @stdout_original
+      $stdout = @stdout
     end
+
+    #Redirect intentional puts from within test to the real STDOUT for troublshooting purposes.
+    def puts(*args)
+      @stdout.puts(*args)
+    end
+
   end
 end
 require 'mocha'

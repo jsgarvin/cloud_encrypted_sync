@@ -25,34 +25,7 @@ module CloudEncryptedSync
         end
       end
 
-      def parse_command_line_options
-        return if @command_line_options
-        executable_name = File.basename($PROGRAM_NAME)
-        @command_line_options = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
-
-        @option_parser = OptionParser.new do |opts|
-          opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
-          opts.on('--data-dir PATH',"Data directory where snapshots and config file are found.") do |path|
-            @command_line_options[:data_dir] = path
-          end
-          opts.on('--s3-credentials ACCESS_KEY_ID,SECRET_ACCESS_KEY', Array, "Credentials for your S3 account." ) do| credentials|
-            @command_line_options[:s3_credentials] = credentials
-          end
-          opts.on('--s3-bucket BUCKETNAME', 'Name of bucket to use on S3.') do |bucket|
-            @command_line_options[:s3_bucket] = bucket
-          end
-          opts.on('--encryption-key KEY') do |key|
-            @command_line_options[:encryption_key] = key
-          end
-          opts.on('--initialization-vector VECTOR') do |vector|
-            @command_line_options[:initialization_vector] = vector
-          end
-        end
-        @option_parser.parse!
-        return @option_parser
-      end
-
-      def sync!(&block)
+      def sync!
         option_parser = parse_command_line_options
         if ARGV.empty?
           puts "You must supply a path to a folder to sync."
@@ -68,7 +41,11 @@ module CloudEncryptedSync
             puts
             puts option_parser.help
           else
-            block.call
+            CloudEncryptedSync::Master.delete_local_files!
+            CloudEncryptedSync::Master.delete_remote_files!
+            CloudEncryptedSync::Master.pull_files!
+            CloudEncryptedSync::Master.push_files!
+            CloudEncryptedSync::Master.finalize!
           end
         end
       end
@@ -144,6 +121,33 @@ module CloudEncryptedSync
       #######
       private
       #######
+
+      def parse_command_line_options
+        return if @command_line_options
+        executable_name = File.basename($PROGRAM_NAME)
+        @command_line_options = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
+
+        @option_parser = OptionParser.new do |opts|
+          opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
+          opts.on('--data-dir PATH',"Data directory where snapshots and config file are found.") do |path|
+            @command_line_options[:data_dir] = path
+          end
+          opts.on('--s3-credentials ACCESS_KEY_ID,SECRET_ACCESS_KEY', Array, "Credentials for your S3 account." ) do| credentials|
+            @command_line_options[:s3_credentials] = credentials
+          end
+          opts.on('--s3-bucket BUCKETNAME', 'Name of bucket to use on S3.') do |bucket|
+            @command_line_options[:s3_bucket] = bucket
+          end
+          opts.on('--encryption-key KEY') do |key|
+            @command_line_options[:encryption_key] = key
+          end
+          opts.on('--initialization-vector VECTOR') do |vector|
+            @command_line_options[:initialization_vector] = vector
+          end
+        end
+        @option_parser.parse!
+        return @option_parser
+      end
 
       def directory_hash
         return @directory_hash if @directory_hash
