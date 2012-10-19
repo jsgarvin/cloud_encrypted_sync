@@ -53,13 +53,13 @@ module CloudEncryptedSync
       def push_files!
         progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pushing Files: ')
         pushed_files_counter = 0
-        files_to_push.each_pair  do |key,relative_path|
-          if S3Liason.key_exists?(key)
+        files_to_push.each_pair do |key,relative_path|
+          if adapter.key_exists?(key)
             #already exists. probably left over from an earlier aborted push
             puts "Not Pushing (already exists): #{relative_path}"
           else
             puts "Pushing: #{relative_path}"
-            S3Liason.write(File.read(full_file_path(relative_path)),key)
+            write_to_adapter(File.read(full_file_path(relative_path)),key)
             self.finalize_required = true
           end
           pushed_files_counter += 1
@@ -79,7 +79,7 @@ module CloudEncryptedSync
             Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
             puts "Pulling: #{relative_path}"
             begin
-              File.open(full_path,'w') { |file| file.write(S3Liason.read(key)) }
+              File.open(full_path,'w') { |file| file.write(read_from_adapter(key)) }
               self.finalize_required = true
             rescue AWS::S3::Errors::NoSuchKey
               puts "Failed to pull #{relative_path}"
@@ -93,7 +93,7 @@ module CloudEncryptedSync
       def delete_remote_files!
         remote_files_to_delete.each_pair do |key,path|
           puts "Deleting Remote: #{path}"
-          S3Liason.delete(key)
+          adapter.delete(key)
           self.finalize_required = true
         end
       end
@@ -121,6 +121,18 @@ module CloudEncryptedSync
       #######
       private
       #######
+
+      def adapter
+        S3Liason
+      end
+
+      def write_to_adapter(data,key)
+        adapter.write(Cryptographer.encrypt_data(data),key)
+      end
+
+      def read_from_adapter(key)
+        Cryptographer.decrypt_data(adapter.read(key))
+      end
 
       def parse_command_line_options
         return if @command_line_options
@@ -205,7 +217,7 @@ module CloudEncryptedSync
 
       def remote_directory_hash
         @remote_directory_hash ||= begin
-          YAML.parse(Cryptographer.decrypt_data(S3Liason.read(directory_key))).to_ruby
+          YAML.parse(Cryptographer.decrypt_data(read_from_adapter(directory_key))).to_ruby
         rescue AWS::S3::Errors::NoSuchKey
           {}
         end
@@ -213,7 +225,7 @@ module CloudEncryptedSync
 
       def store_directory_hash_file
         @directory_hash = nil #force re-compile before pushing to remote
-        S3Liason.write(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
+        write_to_adapter(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
       end
 
       def deletable_files_check(source_hash,comparison_hash)
