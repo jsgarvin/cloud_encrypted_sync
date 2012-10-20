@@ -10,13 +10,11 @@ Gem::Specification.new do |s|
   s.summary = %q{Encrypted sync of folder contents to/from cloud storage.}
   s.description = %q{Encrypted sync of folder contents to/from cloud storage with user controller encryption keys.}
 
-  s.add_dependency('aws-sdk', '~> 1.4.1')
-  
   s.add_development_dependency('mocha')
   s.add_development_dependency('simplecov')
   s.add_development_dependency('fakefs')
   s.add_development_dependency('activesupport')
-  
+
   s.files = `git ls-files`.split("\n")
   s.test_files = `git ls-files -- test/*`.split("\n")
   s.executables = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }

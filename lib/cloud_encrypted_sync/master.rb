@@ -89,7 +89,7 @@ module CloudEncryptedSync
             begin
               File.open(full_path,'w') { |file| file.write(read_from_adapter(key)) }
               self.finalize_required = true
-            rescue AWS::S3::Errors::NoSuchKey
+            rescue #AWS::S3::Errors::NoSuchKey  Should provide error for adapters to raise
               puts "Failed to pull #{relative_path}"
             end
           end
@@ -224,7 +224,7 @@ module CloudEncryptedSync
       def remote_directory_hash
         @remote_directory_hash ||= begin
           YAML.parse(Cryptographer.decrypt_data(read_from_adapter(directory_key))).to_ruby
-        rescue AWS::S3::Errors::NoSuchKey
+        rescue #AWS::S3::Errors::NoSuchKey  should provide error for adapters to raise
           {}
         end
       end

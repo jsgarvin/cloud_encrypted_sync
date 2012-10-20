@@ -13,11 +13,8 @@ require 'cloud_encrypted_sync'
 module CloudEncryptedSync
   class ActiveSupport::TestCase
 
-    S3_LIASON_STUBBABLE_METHODS = [:red,:write,:delete,:key_exists?]
-
     setup :activate_fake_fs
     setup :preset_environment
-    #setup :roadblock_s3_liason
     setup :capture_stdout
     teardown :deactivate_fake_fs
     teardown :release_stdout
@@ -51,12 +48,6 @@ module CloudEncryptedSync
 
     def deactivate_fake_fs
       FakeFS.deactivate!
-    end
-
-    def roadblock_s3_liason
-      S3_LIASON_STUBBABLE_METHODS.each do |method_name|
-        S3Liason.stubs(method_name).raises(RuntimeError, "You're supposed to stub out S3Liason.#{method_name}(), jerky boy.")
-      end
     end
 
     #Capture STDOUT from program for testing and not cluttering test output
