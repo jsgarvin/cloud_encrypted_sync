@@ -27,7 +27,7 @@ module CloudEncryptedSync
       precrypted_data = File.read(source_folder + '/test_sub_folder/test_file_one.txt')
       encrypted_data = Cryptographer.encrypt_data(precrypted_data)
       key = Cryptographer.hash_data('test_file_key')
-      S3Liason.expects(:write).with(encrypted_data,key).returns(true)
+      Adapters::Dummy.expects(:write).with(encrypted_data,key).returns(true)
       Master.send(:write_to_adapter,precrypted_data,key)
     end
 
@@ -35,15 +35,15 @@ module CloudEncryptedSync
       precrypted_data = File.read(source_folder + '/test_sub_folder/test_file_one.txt')
       encrypted_data = Cryptographer.encrypt_data(precrypted_data)
       key = Cryptographer.hash_data('test_file_key')
-      S3Liason.expects(:read).with(key).returns(encrypted_data)
+      Adapters::Dummy.expects(:read).with(key).returns(encrypted_data)
       assert_equal(precrypted_data,Master.send(:read_from_adapter,key))
     end
 
     test 'should push files' do
       Master.stubs(:remote_directory_hash).returns({})
       Master.stubs(:last_sync_hash).returns({})
-      S3Liason.stubs(:key_exists?).returns(false)
-      S3Liason.expects(:write).with(any_parameters).returns(true)
+      Adapters::Dummy.stubs(:key_exists?).returns(false)
+      Adapters::Dummy.expects(:write).with(any_parameters).returns(true)
       assert_equal('',$stdout.string)
       Master.push_files!
       assert_match(/\% Complete/,$stdout.string)
@@ -60,7 +60,7 @@ module CloudEncryptedSync
       Master.stubs(:remote_directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
       Master.stubs(:directory_hash).returns({})
       Master.stubs(:last_sync_hash).returns({})
-      S3Liason.expects(:read).with('new_file_key').returns(Cryptographer.encrypt_data('foobar'))
+      Adapters::Dummy.expects(:read).with('new_file_key').returns(Cryptographer.encrypt_data('foobar'))
       assert_equal('',$stdout.string)
       assert_difference('Dir["#{Master.send(:sync_path)}/**/*"].length') do
         Master.pull_files!
@@ -93,7 +93,7 @@ module CloudEncryptedSync
       Master.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
       Master.stubs(:directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
       Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      S3Liason.expects(:delete).with('deleted_file_key').returns(true)
+      Adapters::Dummy.expects(:delete).with('deleted_file_key').returns(true)
       Master.delete_remote_files!
     end
 
@@ -118,7 +118,7 @@ module CloudEncryptedSync
       double_encrypted_directory_hash = Cryptographer.encrypt_data(Cryptographer.encrypt_data(sample_directory_hash.to_yaml))
       Master.instance_variable_set(:@finalize_required,true)
       Master.stubs(:directory_hash).returns(sample_directory_hash)
-      S3Liason.expects(:write).with(double_encrypted_directory_hash,Master.send(:directory_key)).returns(true)
+      Adapters::Dummy.expects(:write).with(double_encrypted_directory_hash,Master.send(:directory_key)).returns(true)
       Master.finalize!
     end
 
@@ -126,7 +126,7 @@ module CloudEncryptedSync
       #setup mock data
       sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
       double_encrypted_directory_hash = Cryptographer.encrypt_data(Cryptographer.encrypt_data(sample_directory_hash.to_yaml))
-      S3Liason.stubs(:read).with(Master.send(:directory_key)).returns(double_encrypted_directory_hash)
+      Adapters::Dummy.stubs(:read).with(Master.send(:directory_key)).returns(double_encrypted_directory_hash)
 
       #do actual test
       decrypted_remote_hash = Master.send(:remote_directory_hash)
@@ -136,20 +136,22 @@ module CloudEncryptedSync
     test 'should parse command line options' do
       Master.instance_variable_set(:@command_line_options,nil)
       Object.send(:remove_const,:ARGV)
-      ::ARGV = '--s3-bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters --initialization-vector asdfg --s3-credentials access_key_id,access_key'.split(/\s/)
+      ::ARGV = '--adapter dummy --bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters --initialization-vector asdfg'.split(/\s/)
       Master.send(:parse_command_line_options)
-      clo = Master.instance_variable_get(:@command_line_options)
-      assert_equal('foobar',clo[:s3_bucket])
-      assert_equal('~/test/folder',clo[:data_dir])
-      assert_equal('somestringofcharacters',clo[:encryption_key])
-      assert_equal('asdfg',clo[:initialization_vector])
-      assert_equal(['access_key_id','access_key'],clo[:s3_credentials])
+      master_clo = Master.instance_variable_get(:@command_line_options)
+      assert_equal('dummy',master_clo[:adapter_name])
+      assert_equal('~/test/folder',master_clo[:data_dir])
+      assert_equal('somestringofcharacters',master_clo[:encryption_key])
+      assert_equal('asdfg',master_clo[:initialization_vector])
+
+      adapter_clo = Adapters::Dummy.instance_variable_get(:@command_line_options)
+      assert_equal('foobar',adapter_clo[:bucket_name])
     end
 
     test 'should gracefully fail on path in ARGV' do
       Master.instance_variable_set(:@command_line_options,nil)
       Object.send(:remove_const,:ARGV)
-      ::ARGV = '--s3-bucket foobar'.split(/\s/)
+      ::ARGV = '--adapter dummy --bucket foobar'.split(/\s/)
       assert_equal('',$stdout.string)
       Master.expects(:pull_files).never
       Master.sync!
@@ -160,7 +162,7 @@ module CloudEncryptedSync
       Master.instance_variable_set(:@config,{})
       Master.instance_variable_set(:@command_line_options,nil)
       Object.send(:remove_const,:ARGV)
-      ::ARGV = '--s3-bucket foobar /some/path/to/sync'.split(/\s/)
+      ::ARGV = '--adapter dummy --bucket foobar /some/path/to/sync'.split(/\s/)
       assert_equal('',$stdout.string)
       Master.expects(:pull_files!).never
       Master.sync!
@@ -170,8 +172,9 @@ module CloudEncryptedSync
     test 'should successfully call block with minimum cli arguments' do
       File.stubs(:exist?).with(Master.send(:config_file_path)).returns(false)
       Master.instance_variable_set(:@command_line_options,nil)
+      Master.instance_variable_set(:@config,nil)
       Object.send(:remove_const,:ARGV)
-      ::ARGV = '--s3-bucket foobar --encryption-key mykey --initialization-vector vector /some/path/to/sync'.split(/\s/)
+      ::ARGV = '--adapter dummy --bucket foobar --encryption-key mykey --initialization-vector vector /some/path/to/sync'.split(/\s/)
       Master.expects(:delete_local_files!).returns(true).once
       Master.expects(:delete_remote_files!).returns(true).once
       Master.expects(:pull_files!).returns(true).once

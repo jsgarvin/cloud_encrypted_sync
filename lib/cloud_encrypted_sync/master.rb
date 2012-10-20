@@ -1,14 +1,22 @@
 require 'find'
 require 'digest'
 require 'yaml'
+require 'active_support/core_ext/string'
 
 module CloudEncryptedSync
   class Master
 
     class << self
       attr_accessor :finalize_required
-      attr_reader   :command_line_options
+      attr_reader   :command_line_options, :adapters
       attr_writer   :sync_path
+
+      def register(adapter)
+        @adapters ||= {}
+        name = adapter.name.match(/([^:]+)$/)[0].underscore.to_sym
+        raise RegistrationError, "#{name} already registered" if @adapters[name]
+        @adapters[name] = adapter
+      end
 
       def config
         if @config
@@ -123,7 +131,7 @@ module CloudEncryptedSync
       #######
 
       def adapter
-        S3Liason
+        @adapters[config[:adapter_name].to_sym]
       end
 
       def write_to_adapter(data,key)
@@ -144,11 +152,11 @@ module CloudEncryptedSync
           opts.on('--data-dir PATH',"Data directory where snapshots and config file are found.") do |path|
             @command_line_options[:data_dir] = path
           end
-          opts.on('--s3-credentials ACCESS_KEY_ID,SECRET_ACCESS_KEY', Array, "Credentials for your S3 account." ) do| credentials|
-            @command_line_options[:s3_credentials] = credentials
-          end
-          opts.on('--s3-bucket BUCKETNAME', 'Name of bucket to use on S3.') do |bucket|
-            @command_line_options[:s3_bucket] = bucket
+          opts.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
+            @command_line_options[:adapter_name] = adapter_name
+            puts "Adapters2: #{adapters}"
+            puts "CLO2: #{@command_line_options}"
+            adapters[adapter_name.to_sym].parse_command_line_options(opts)
           end
           opts.on('--encryption-key KEY') do |key|
             @command_line_options[:encryption_key] = key
@@ -269,4 +277,6 @@ module CloudEncryptedSync
       end
     end
   end
+
+  class RegistrationError < RuntimeError; end
 end

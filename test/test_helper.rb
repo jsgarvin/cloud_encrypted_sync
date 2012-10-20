@@ -17,7 +17,7 @@ module CloudEncryptedSync
 
     setup :activate_fake_fs
     setup :preset_environment
-    setup :roadblock_s3_liason
+    #setup :roadblock_s3_liason
     setup :capture_stdout
     teardown :deactivate_fake_fs
     teardown :release_stdout
@@ -27,7 +27,8 @@ module CloudEncryptedSync
       Master.instance_variable_set(:@command_line_options, {
         :encryption_key => 'asdf',
         :initialization_vector => 'qwerty',
-        :s3_bucket => "ces-test-bucket-#{Etc.hash}",
+        :adapter_name => 'dummy',
+        :bucket => "test-bucket",
         :data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
       })
       Master.instance_variable_set(:@sync_path, source_folder + '/')
@@ -68,7 +69,7 @@ module CloudEncryptedSync
       $stdout = @stdout
     end
 
-    #Redirect intentional puts from within test to the real STDOUT for troublshooting purposes.
+    #Redirect intentional puts from within tests to the real STDOUT for troublshooting purposes.
     def puts(*args)
       @stdout.puts(*args)
     end

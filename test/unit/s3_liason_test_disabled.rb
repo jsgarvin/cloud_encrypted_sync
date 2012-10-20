@@ -3,14 +3,14 @@ require 'test_helper'
 module CloudEncryptedSync
   class S3LiasonTest < ActiveSupport::TestCase
 
-    setup :remove_s3_liason_roadblock
-    setup :load_s3_credentials
-    setup :create_test_bucket
+    #setup :remove_s3_liason_roadblock
+    #setup :load_s3_credentials
+    #setup :create_test_bucket
 
-    teardown :delete_test_bucket
+    #teardown :delete_test_bucket
 
     test 'should write readable file to s3 and then delete it' do
-
+skip 'prepping to extract'
       skip 'S3 credentials for test bucket not provided.' unless Master.config[:s3_credentials].is_a?(Array) and Master.config[:s3_credentials] != []
 
       test_file_path = File.expand_path('../../test_folder/test_sub_folder/test_file_one.txt',  __FILE__)
