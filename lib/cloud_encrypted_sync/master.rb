@@ -154,8 +154,6 @@ module CloudEncryptedSync
           end
           opts.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
             @command_line_options[:adapter_name] = adapter_name
-            puts "Adapters2: #{adapters}"
-            puts "CLO2: #{@command_line_options}"
             adapters[adapter_name.to_sym].parse_command_line_options(opts)
           end
           opts.on('--encryption-key KEY') do |key|
