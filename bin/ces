@@ -3,4 +3,9 @@ require 'optparse'
 require 'etc'
 require File.expand_path('../../lib/cloud_encrypted_sync', __FILE__)
 
+# pull in adapters
+Dir.glob(File.expand_path("../../../**/cloud_encrypted_sync_*_adapter/lib/*.rb",__FILE__)).each do |filename|
+  require filename.gsub(/\.rb/,'')
+end
+
 CloudEncryptedSync::Master.sync!
