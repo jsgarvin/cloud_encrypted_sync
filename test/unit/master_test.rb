@@ -143,9 +143,7 @@ module CloudEncryptedSync
       assert_equal('~/test/folder',master_clo[:data_dir])
       assert_equal('somestringofcharacters',master_clo[:encryption_key])
       assert_equal('asdfg',master_clo[:initialization_vector])
-
-      adapter_clo = Adapters::Dummy.instance_variable_get(:@command_line_options)
-      assert_equal('foobar',adapter_clo[:bucket_name])
+      assert_equal('foobar',master_clo[:bucket_name])
     end
 
     test 'should gracefully fail on path in ARGV' do
@@ -154,7 +152,7 @@ module CloudEncryptedSync
       ::ARGV = '--adapter dummy --bucket foobar'.split(/\s/)
       assert_equal('',$stdout.string)
       Master.expects(:pull_files).never
-      Master.sync!
+      Master.sync
       assert_match(/You must supply a path/,$stdout.string)
     end
 
@@ -165,7 +163,7 @@ module CloudEncryptedSync
       ::ARGV = '--adapter dummy --bucket foobar /some/path/to/sync'.split(/\s/)
       assert_equal('',$stdout.string)
       Master.expects(:pull_files!).never
-      Master.sync!
+      Master.sync
       assert_match(/You must supply an encryption key and initialization vector/,$stdout.string)
     end
 
@@ -180,7 +178,7 @@ module CloudEncryptedSync
       Master.expects(:pull_files!).returns(true).once
       Master.expects(:push_files!).returns(true).once
       Master.expects(:finalize!).returns(true).once
-      Master.sync!
+      Master.sync
     end
   end
 end

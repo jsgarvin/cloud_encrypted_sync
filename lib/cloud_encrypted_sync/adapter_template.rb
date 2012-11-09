@@ -28,11 +28,6 @@ module CloudEncryptedSync
           raise 'called template method: key_exists?'
         end
 
-        private
-
-        def command_line_options
-          @command_line_options ||= {}
-        end
       end
     end
   end

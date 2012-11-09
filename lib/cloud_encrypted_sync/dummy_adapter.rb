@@ -8,10 +8,11 @@ module CloudEncryptedSync
           stored_data[key] = data
         end
 
-        def parse_command_line_options(opts)
+        def parse_command_line_options(opts,command_line_options)
           opts.on('--bucket BUCKETNAME', 'Name of cloud adapter to use.') do |bucket_name|
             command_line_options[:bucket_name] = bucket_name
           end
+          return command_line_options
         end
 
         def read(key)
