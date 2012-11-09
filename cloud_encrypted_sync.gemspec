@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.email = ["jon@5valleys.com"]
   s.homepage = "https://github.com/jsgarvin/cloud_encrypted_sync"
   s.summary = %q{Encrypted sync of folder contents to/from cloud storage.}
-  s.description = %q{Encrypted sync of folder contents to/from cloud storage with user controller encryption keys.}
+  s.description = %q{Encrypted sync of folder contents to/from cloud storage with user controlled encryption keys.}
 
   s.add_development_dependency('mocha')
   s.add_development_dependency('simplecov')

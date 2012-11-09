@@ -33,7 +33,12 @@ module CloudEncryptedSync
         end
       end
 
-      def sync!
+      def activate!
+        find_and_require_adapters
+        sync
+      end
+
+      def sync
         option_parser = parse_command_line_options
         if ARGV.empty?
           puts "You must supply a path to a folder to sync."
@@ -130,6 +135,26 @@ module CloudEncryptedSync
       private
       #######
 
+      def find_and_require_adapters
+        latest_versions_of_installed_adapters.each_pair do |adapter_name,adapter_version|
+          require File.expand_path("../../../../cloud_encrypted_sync_#{adapter_name}_adapter-#{adapter_version}", __FILE__)
+        end
+      end
+
+      def latest_versions_of_installed_adapters
+        glob_path = '../../../../cloud_encrypted_sync_*_adapter-*/lib/*.rb'
+        Dir.glob(File.expand_path(glob_path,__FILE__)).inject({}) do |hash,adapter_path|
+          if adapter_path.match(/cloud_encrypted_sync_(.+)_adapter-(.+)/)
+            adapter_name = $1
+            adapter_version = $2
+            if hash[adapter_name].to_s < adapter_version
+              hash[adapter_name] = adapter_version
+            end
+          end
+          hash
+        end
+      end
+
       def adapter
         @adapters[config[:adapter_name].to_sym]
       end
@@ -149,17 +174,18 @@ module CloudEncryptedSync
 
         @option_parser = OptionParser.new do |opts|
           opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
-          opts.on('--data-dir PATH',"Data directory where snapshots and config file are found.") do |path|
+          opts.on('--data-dir=PATH',"Data directory where snapshots and config file are found.") do |path|
             @command_line_options[:data_dir] = path
           end
-          opts.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
+          opts.on('--adapter=ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
             @command_line_options[:adapter_name] = adapter_name
-            adapters[adapter_name.to_sym].parse_command_line_options(opts)
+            puts adapters.inspect
+            @command_line_options = adapters[adapter_name.to_sym].parse_command_line_options(opts,@command_line_options)
           end
-          opts.on('--encryption-key KEY') do |key|
+          opts.on('--encryption-key=KEY') do |key|
             @command_line_options[:encryption_key] = key
           end
-          opts.on('--initialization-vector VECTOR') do |vector|
+          opts.on('--initialization-vector=VECTOR') do |vector|
             @command_line_options[:initialization_vector] = vector
           end
         end
