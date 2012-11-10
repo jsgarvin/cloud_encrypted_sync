@@ -23,17 +23,37 @@ preferred cloud.
 CES runs as a command line tool and takes options as CLI arguments and/or from a config file.
 Arguments passed at the command line take precedence over those in the config file.
 
-Example
+### Creating a valid encryption key and initialization vector.
+
+TODO
+
+### Example
+
     ces --adapter=s3 --bucket=my-backup-bucket --s3-credentials=ACCESS_KEY_ID,SECRET_ACCESS_KEY --encryption-key=MYENCRYPTIONKEY --initialization-vector=VALIDINITIALIZATIONVECTOR
 
 ## Configuration
 
 Configuration options may be passed to CES via the command line, or via a config yaml file.
 
-The default location for the config file is `your-home-directory/.cloud_encrypted_sync/config.rc.yml
+The default location for the config file is `~/.cloud_encrypted_sync/config.rc.yml`
 
-#TODO  Add list of accepted config options
+### Available Settings
 
-## Creating additional adapters
+CES requires the following configuration settings. Any of thse may alternatively be placed in
+the `config.rc.yml` execpt for `--data-dir` (which tells CES which folder contains the config
+file to use).
 
+* `--adapter=ADAPTERNAME` The name of the adapter to use. See instructions for your preferred
+adapter for instructions of what to place here.
+* `--encryption-key=XXX`  The encryption key (shocking, I know).
+* `--initialization-vector=III` Initialization vector to use for encryption.
 
+In addition to these settings, your chosen adapter will probably also have additional adapter
+specific settings as well, such as credentials to log into your cloud storage account. Adapter
+specific settings may work the same the the above standard settings in that they may be included
+on the command or in the `config.rc.yml` file (unless the adapter author breaks convention and
+tries to do something weird).
+
+## Creating your own adapter
+
+TODO
