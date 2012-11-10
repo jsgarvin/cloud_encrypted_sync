@@ -1,3 +1,6 @@
+require 'openssl'
+require 'digest'
+
 module CloudEncryptedSync
   class Cryptographer
 
@@ -41,8 +44,8 @@ module CloudEncryptedSync
 
       def setup_cipher(crypt)
         cipher = initialize_cipher(crypt)
-        cipher.key = hash_data(Master.config[:encryption_key])
-        cipher.iv = hash_data(Master.config[:initialization_vector])
+        cipher.key = hash_data(Configuration.settings[:encryption_key])
+        cipher.iv = hash_data(Configuration.settings[:initialization_vector])
         return cipher
       end
 

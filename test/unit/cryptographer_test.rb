@@ -1,8 +1,18 @@
 require 'test_helper'
-require 'openssl'
 
 module CloudEncryptedSync
   class CryptographerTest < ActiveSupport::TestCase
+
+    def setup
+      Configuration.stubs(:settings).returns({
+        :encryption_key => 'asdf',
+        :initialization_vector => 'qwerty',
+        :adapter_name => 'dummy',
+        :bucket => "test-bucket",
+        :data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync",
+        :sync_path => test_source_folder
+      })
+    end
 
     test 'should hash data' do
       hash = Cryptographer.hash_data('abc123')

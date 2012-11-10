@@ -37,7 +37,7 @@ module CloudEncryptedSync
         end
 
         def bucket_name
-          command_line_options[:bucket_name].to_sym
+          Configuration.settings[:bucket_name].to_sym
         end
 
       end

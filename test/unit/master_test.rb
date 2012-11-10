@@ -4,6 +4,17 @@ require 'yaml'
 module CloudEncryptedSync
   class MasterTest < ActiveSupport::TestCase
 
+    def setup
+      Configuration.stubs(:settings).returns({
+        :encryption_key => 'asdf',
+        :initialization_vector => 'qwerty',
+        :adapter_name => 'dummy',
+        :bucket => "test-bucket",
+        :sync_path => test_source_folder
+      })
+      Configuration.stubs(:data_folder_path).returns("#{Etc.getpwuid.dir}/.cloud_encrypted_sync")
+    end
+
     test 'should generate directory hash' do
       assert_equal('',$stdout.string)
       hash = Master.send(:directory_hash)
@@ -13,6 +24,7 @@ module CloudEncryptedSync
     end
 
     test 'should_return_nil_if_never_synced_before' do
+      Master.stubs(:snapshot_file_path).returns('/non/existant/file')
       assert_equal(nil,Master.send(:last_sync_date))
     end
 
@@ -24,7 +36,7 @@ module CloudEncryptedSync
     end
 
     test 'should encrypt when writing' do
-      precrypted_data = File.read(source_folder + '/test_sub_folder/test_file_one.txt')
+      precrypted_data = File.read(test_source_folder + '/test_sub_folder/test_file_one.txt')
       encrypted_data = Cryptographer.encrypt_data(precrypted_data)
       key = Cryptographer.hash_data('test_file_key')
       Adapters::Dummy.expects(:write).with(encrypted_data,key).returns(true)
@@ -32,7 +44,7 @@ module CloudEncryptedSync
     end
 
     test 'should decrypt_when_reading' do
-      precrypted_data = File.read(source_folder + '/test_sub_folder/test_file_one.txt')
+      precrypted_data = File.read(test_source_folder + '/test_sub_folder/test_file_one.txt')
       encrypted_data = Cryptographer.encrypt_data(precrypted_data)
       key = Cryptographer.hash_data('test_file_key')
       Adapters::Dummy.expects(:read).with(key).returns(encrypted_data)
@@ -62,7 +74,7 @@ module CloudEncryptedSync
       Master.stubs(:last_sync_hash).returns({})
       Adapters::Dummy.expects(:read).with('new_file_key').returns(Cryptographer.encrypt_data('foobar'))
       assert_equal('',$stdout.string)
-      assert_difference('Dir["#{Master.send(:sync_path)}/**/*"].length') do
+      assert_difference('Dir["#{test_source_folder}/**/*"].length') do
         Master.pull_files!
       end
       assert_match(/\% Complete/,$stdout.string)
@@ -107,13 +119,13 @@ module CloudEncryptedSync
     test 'should delete local files' do
       Master.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
       Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'}.merge(Master.send(:directory_hash)))
-      assert_difference('Dir["#{Master.send(:sync_path)}/**/*"].length',-1) do
+      assert_difference('Dir["#{test_source_folder}/**/*"].length',-1) do
         Master.delete_local_files!
       end
     end
 
     test 'should finalize' do
-      FileUtils.mkdir_p(Master.send(:data_folder_path))
+      FileUtils.mkdir_p(Configuration.data_folder_path)
       sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
       double_encrypted_directory_hash = Cryptographer.encrypt_data(Cryptographer.encrypt_data(sample_directory_hash.to_yaml))
       Master.instance_variable_set(:@finalize_required,true)
@@ -133,52 +145,5 @@ module CloudEncryptedSync
       assert_equal(sample_directory_hash,decrypted_remote_hash)
     end
 
-    test 'should parse command line options' do
-      Master.instance_variable_set(:@command_line_options,nil)
-      Object.send(:remove_const,:ARGV)
-      ::ARGV = '--adapter dummy --bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters --initialization-vector asdfg'.split(/\s/)
-      Master.send(:parse_command_line_options)
-      master_clo = Master.instance_variable_get(:@command_line_options)
-      assert_equal('dummy',master_clo[:adapter_name])
-      assert_equal('~/test/folder',master_clo[:data_dir])
-      assert_equal('somestringofcharacters',master_clo[:encryption_key])
-      assert_equal('asdfg',master_clo[:initialization_vector])
-      assert_equal('foobar',master_clo[:bucket_name])
-    end
-
-    test 'should gracefully fail on path in ARGV' do
-      Master.instance_variable_set(:@command_line_options,nil)
-      Object.send(:remove_const,:ARGV)
-      ::ARGV = '--adapter dummy --bucket foobar'.split(/\s/)
-      assert_equal('',$stdout.string)
-      Master.expects(:pull_files).never
-      Master.sync
-      assert_match(/You must supply a path/,$stdout.string)
-    end
-
-    test 'should gracefully fail when not provided encryption_key and vector provided path in ARGV' do
-      Master.instance_variable_set(:@config,{})
-      Master.instance_variable_set(:@command_line_options,nil)
-      Object.send(:remove_const,:ARGV)
-      ::ARGV = '--adapter dummy --bucket foobar /some/path/to/sync'.split(/\s/)
-      assert_equal('',$stdout.string)
-      Master.expects(:pull_files!).never
-      Master.sync
-      assert_match(/You must supply an encryption key and initialization vector/,$stdout.string)
-    end
-
-    test 'should successfully call block with minimum cli arguments' do
-      File.stubs(:exist?).with(Master.send(:config_file_path)).returns(false)
-      Master.instance_variable_set(:@command_line_options,nil)
-      Master.instance_variable_set(:@config,nil)
-      Object.send(:remove_const,:ARGV)
-      ::ARGV = '--adapter dummy --bucket foobar --encryption-key mykey --initialization-vector vector /some/path/to/sync'.split(/\s/)
-      Master.expects(:delete_local_files!).returns(true).once
-      Master.expects(:delete_remote_files!).returns(true).once
-      Master.expects(:pull_files!).returns(true).once
-      Master.expects(:push_files!).returns(true).once
-      Master.expects(:finalize!).returns(true).once
-      Master.sync
-    end
   end
 end

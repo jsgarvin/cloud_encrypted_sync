@@ -20,25 +20,18 @@ module CloudEncryptedSync
     teardown :release_stdout
 
     def preset_environment
-      Master.instance_variable_set(:@config,nil)
-      Master.instance_variable_set(:@command_line_options, {
-        :encryption_key => 'asdf',
-        :initialization_vector => 'qwerty',
-        :adapter_name => 'dummy',
-        :bucket => "test-bucket",
-        :data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"
-      })
-      Master.instance_variable_set(:@sync_path, source_folder + '/')
+      Configuration.instance_variable_set(:@settings,nil)
+      Configuration.instance_variable_set(:@command_line_options,nil)
       Master.instance_variable_set(:@directory_hash, nil)
-      FileUtils.mkdir_p source_folder
-      FileUtils.mkdir_p source_folder + '/test_sub_folder'
-      File.open(source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
+      FileUtils.mkdir_p test_source_folder
+      FileUtils.mkdir_p test_source_folder + '/test_sub_folder'
+      File.open(test_source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
         test_file.write('Test File One')
       end
     end
 
-    def source_folder
-      @source_folder ||= File.expand_path('../test_folder',  __FILE__)
+    def test_source_folder
+      @test_source_folder ||= File.expand_path('../test_folder',  __FILE__)
     end
 
     def activate_fake_fs

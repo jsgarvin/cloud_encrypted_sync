@@ -1,6 +1,4 @@
 require 'find'
-require 'digest'
-require 'yaml'
 require 'active_support/core_ext/string'
 
 module CloudEncryptedSync
@@ -18,48 +16,20 @@ module CloudEncryptedSync
         @adapters[name] = adapter
       end
 
-      def config
-        if @config
-          return @config
-        else
-          @config = {}
-          FileUtils.mkdir_p(data_folder_path) unless Dir.exists?(data_folder_path)
-          @config = YAML.load_file(config_file_path) if File.exist?(config_file_path)
-          @config.merge!(command_line_options)
-          @config = @config.inject({}) do |options, (key, value)|
-            options[(key.to_sym rescue key) || key] = value
-            options
-          end
-        end
-      end
-
       def activate!
         find_and_require_adapters
         sync
       end
 
       def sync
-        option_parser = parse_command_line_options
-        if ARGV.empty?
-          puts "You must supply a path to a folder to sync."
-          puts
-          puts option_parser.help
-        else
-          CloudEncryptedSync::Master.sync_path = ARGV.shift
-          CloudEncryptedSync::Master.config[:encryption_key] ||= ARGV.shift
-          CloudEncryptedSync::Master.config[:initialization_vector] ||= ARGV.shift
-          config = CloudEncryptedSync::Master.config
-          if config[:encryption_key].nil? or config[:encryption_key].empty? or config[:initialization_vector].nil? or config[:initialization_vector].empty?
-            puts "You must supply an encryption key and initialization vector."
-            puts
-            puts option_parser.help
-          else
-            CloudEncryptedSync::Master.delete_local_files!
-            CloudEncryptedSync::Master.delete_remote_files!
-            CloudEncryptedSync::Master.pull_files!
-            CloudEncryptedSync::Master.push_files!
-            CloudEncryptedSync::Master.finalize!
-          end
+        begin
+          CloudEncryptedSync::Master.delete_local_files!
+          CloudEncryptedSync::Master.delete_remote_files!
+          CloudEncryptedSync::Master.pull_files!
+          CloudEncryptedSync::Master.push_files!
+          CloudEncryptedSync::Master.finalize!
+        rescue IncompleteConfigurationError => exception
+          puts exception.message
         end
       end
 
@@ -156,7 +126,7 @@ module CloudEncryptedSync
       end
 
       def adapter
-        @adapters[config[:adapter_name].to_sym]
+        @adapters[Configuration.settings[:adapter_name].to_sym]
       end
 
       def write_to_adapter(data,key)
@@ -167,38 +137,12 @@ module CloudEncryptedSync
         Cryptographer.decrypt_data(adapter.read(key))
       end
 
-      def parse_command_line_options
-        return if @command_line_options
-        executable_name = File.basename($PROGRAM_NAME)
-        @command_line_options = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
-
-        @option_parser = OptionParser.new do |opts|
-          opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync [ENCRYPTION KEY] [INITIALIZATION VECTOR]"
-          opts.on('--data-dir=PATH',"Data directory where snapshots and config file are found.") do |path|
-            @command_line_options[:data_dir] = path
-          end
-          opts.on('--adapter=ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
-            @command_line_options[:adapter_name] = adapter_name
-            puts adapters.inspect
-            @command_line_options = adapters[adapter_name.to_sym].parse_command_line_options(opts,@command_line_options)
-          end
-          opts.on('--encryption-key=KEY') do |key|
-            @command_line_options[:encryption_key] = key
-          end
-          opts.on('--initialization-vector=VECTOR') do |vector|
-            @command_line_options[:initialization_vector] = vector
-          end
-        end
-        @option_parser.parse!
-        return @option_parser
-      end
-
       def directory_hash
         return @directory_hash if @directory_hash
         @directory_hash = {}
-        progress_meter = ProgressMeter.new(Dir["#{sync_path}/**/*"].length,:label => 'Compiling Directory Analysis: ')
+        progress_meter = ProgressMeter.new(Dir["#{normalized_sync_path}/**/*"].length,:label => 'Compiling Directory Analysis: ')
         completed_files = 0
-        Find.find(sync_path) do |path|
+        Find.find(normalized_sync_path) do |path|
           print progress_meter.update(completed_files)
           if FileTest.directory?(path)
             completed_files += 1
@@ -213,14 +157,20 @@ module CloudEncryptedSync
       end
 
       def directory_key
-        @directory_key ||= Cryptographer.hash_data(config[:encryption_key])
+        @directory_key ||= Cryptographer.hash_data(Configuration.settings[:encryption_key])
       end
 
-      def sync_path
-        return @modified_sync_path if @modified_sync_path
-        @modified_sync_path = @sync_path
-        @modified_sync_path += '/' unless @modified_sync_path.match(/\/$/)
-        return @modified_sync_path
+      def normalized_sync_path
+        @normalized_sync_path ||= normalize_sync_path
+      end
+
+      def normalize_sync_path
+        path = Configuration.settings[:sync_path]
+        if path.match(/\/$/)
+          return path
+        else
+          return path + '/'
+        end
       end
 
       def last_sync_date
@@ -273,19 +223,11 @@ module CloudEncryptedSync
       end
 
       def snapshot_file_path
-        "#{data_folder_path}/#{snapshot_filename}"
+        "#{Configuration.data_folder_path}/#{snapshot_filename}"
       end
 
       def snapshot_filename
-        "#{sync_path.gsub(/[^A-Za-z0-9]/,'_')}.snapshot.yml"
-      end
-
-      def data_folder_path
-        command_line_options[:data_dir]
-      end
-
-      def config_file_path
-        data_folder_path+'/config.rc.yml'
+        "#{normalized_sync_path.gsub(/[^A-Za-z0-9]/,'_')}.snapshot.yml"
       end
 
       def file_key(full_path)
@@ -293,11 +235,11 @@ module CloudEncryptedSync
       end
 
       def relative_file_path(full_path)
-        full_path.gsub(sync_path,'')
+        full_path.gsub(normalized_sync_path,'')
       end
 
       def full_file_path(relative_path)
-        sync_path+'/'+relative_path
+        normalized_sync_path+'/'+relative_path
       end
     end
   end
