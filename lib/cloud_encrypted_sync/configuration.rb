@@ -33,8 +33,8 @@ module CloudEncryptedSync
         if loaded_settings[:sync_path].nil?
           message = "You must supply a path to a folder to sync.\n\n#{option_parser.help}"
           raise IncompleteConfigurationError.new(message)
-        elsif loaded_settings[:encryption_key].nil? or loaded_settings[:encryption_key].empty? or loaded_settings[:initialization_vector].nil? or loaded_settings[:initialization_vector].empty?
-          message = "You must supply an encryption key and initialization vector.\n\n#{option_parser.help}"
+        elsif loaded_settings[:encryption_key].nil? or loaded_settings[:encryption_key].empty?
+          message = "You must supply an encryption key.\n\n#{option_parser.help}"
           raise IncompleteConfigurationError.new(message)
         end
 
@@ -68,9 +68,6 @@ module CloudEncryptedSync
           end
           opts.on('--encryption-key KEY') do |key|
             clo[:encryption_key] = key
-          end
-          opts.on('--initialization-vector VECTOR') do |vector|
-            clo[:initialization_vector] = vector
           end
         end
         @option_parser.parse!

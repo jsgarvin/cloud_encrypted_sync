@@ -11,12 +11,11 @@ module CloudEncryptedSync
     end
 
     test 'should parse command line options' do
-      ::ARGV = '--adapter dummy --bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters --initialization-vector asdfg /some/path'.split(/\s/)
+      ::ARGV = '--adapter dummy --bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters /some/path'.split(/\s/)
       settings = Configuration.settings
       assert_equal('dummy',settings[:adapter_name])
       assert_equal('~/test/folder',settings[:data_dir])
       assert_equal('somestringofcharacters',settings[:encryption_key])
-      assert_equal('asdfg',settings[:initialization_vector])
       assert_equal('foobar',settings[:bucket_name])
     end
 

@@ -29,7 +29,7 @@ TODO
 
 ### Example
 
-    ces --adapter=s3 --bucket=my-backup-bucket --s3-credentials=ACCESS_KEY_ID,SECRET_ACCESS_KEY --encryption-key=MYENCRYPTIONKEY --initialization-vector=VALIDINITIALIZATIONVECTOR
+    ces --adapter=s3 --bucket=my-backup-bucket --s3-credentials=ACCESS_KEY_ID,SECRET_ACCESS_KEY --encryption-key=MYENCRYPTIONKEY /path/to/source/folder
 
 ## Configuration
 
@@ -46,7 +46,6 @@ file to use).
 * `--adapter=ADAPTERNAME` The name of the adapter to use. See instructions for your preferred
 adapter for instructions of what to place here.
 * `--encryption-key=XXX`  The encryption key (shocking, I know).
-* `--initialization-vector=III` Initialization vector to use for encryption.
 
 In addition to these settings, your chosen adapter will probably also have additional adapter
 specific settings as well, such as credentials to log into your cloud storage account. Adapter

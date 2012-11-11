@@ -42,7 +42,7 @@ module CloudEncryptedSync
             puts "Not Pushing (already exists): #{relative_path}"
           else
             puts "Pushing: #{relative_path}"
-            write_to_adapter(File.read(full_file_path(relative_path)),key)
+            encrypt_to_adapter(File.read(full_file_path(relative_path)),key)
             self.finalize_required = true
           end
           pushed_files_counter += 1
@@ -62,7 +62,7 @@ module CloudEncryptedSync
             Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
             puts "Pulling: #{relative_path}"
             begin
-              File.open(full_path,'w') { |file| file.write(read_from_adapter(key)) }
+              File.open(full_path,'w') { |file| file.write(decrypt_from_adapter(key)) }
               self.finalize_required = true
             rescue #AWS::S3::Errors::NoSuchKey  Should provide error for adapters to raise
               puts "Failed to pull #{relative_path}"
@@ -129,11 +129,11 @@ module CloudEncryptedSync
         @adapters[Configuration.settings[:adapter_name].to_sym]
       end
 
-      def write_to_adapter(data,key)
+      def encrypt_to_adapter(data,key)
         adapter.write(Cryptographer.encrypt_data(data),key)
       end
 
-      def read_from_adapter(key)
+      def decrypt_from_adapter(key)
         Cryptographer.decrypt_data(adapter.read(key))
       end
 
@@ -199,7 +199,7 @@ module CloudEncryptedSync
 
       def remote_directory_hash
         @remote_directory_hash ||= begin
-          YAML.parse(Cryptographer.decrypt_data(read_from_adapter(directory_key))).to_ruby
+          YAML.parse(decrypt_from_adapter(directory_key)).to_ruby
         rescue #AWS::S3::Errors::NoSuchKey  should provide error for adapters to raise
           {}
         end
@@ -207,7 +207,7 @@ module CloudEncryptedSync
 
       def store_directory_hash_file
         @directory_hash = nil #force re-compile before pushing to remote
-        write_to_adapter(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
+        encrypt_to_adapter(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
       end
 
       def deletable_files_check(source_hash,comparison_hash)

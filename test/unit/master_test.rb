@@ -37,10 +37,9 @@ module CloudEncryptedSync
 
     test 'should encrypt when writing' do
       precrypted_data = File.read(test_source_folder + '/test_sub_folder/test_file_one.txt')
-      encrypted_data = Cryptographer.encrypt_data(precrypted_data)
       key = Cryptographer.hash_data('test_file_key')
-      Adapters::Dummy.expects(:write).with(encrypted_data,key).returns(true)
-      Master.send(:write_to_adapter,precrypted_data,key)
+      Adapters::Dummy.expects(:write).with(anything,key).returns(true)
+      Master.send(:encrypt_to_adapter,precrypted_data,key)
     end
 
     test 'should decrypt_when_reading' do
@@ -48,7 +47,7 @@ module CloudEncryptedSync
       encrypted_data = Cryptographer.encrypt_data(precrypted_data)
       key = Cryptographer.hash_data('test_file_key')
       Adapters::Dummy.expects(:read).with(key).returns(encrypted_data)
-      assert_equal(precrypted_data,Master.send(:read_from_adapter,key))
+      assert_equal(precrypted_data,Master.send(:decrypt_from_adapter,key))
     end
 
     test 'should push files' do
@@ -127,18 +126,17 @@ module CloudEncryptedSync
     test 'should finalize' do
       FileUtils.mkdir_p(Configuration.data_folder_path)
       sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
-      double_encrypted_directory_hash = Cryptographer.encrypt_data(Cryptographer.encrypt_data(sample_directory_hash.to_yaml))
       Master.instance_variable_set(:@finalize_required,true)
       Master.stubs(:directory_hash).returns(sample_directory_hash)
-      Adapters::Dummy.expects(:write).with(double_encrypted_directory_hash,Master.send(:directory_key)).returns(true)
+      Adapters::Dummy.expects(:write).with(anything,Master.send(:directory_key)).returns(true)
       Master.finalize!
     end
 
     test 'should decrypt remote directory file' do
       #setup mock data
       sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
-      double_encrypted_directory_hash = Cryptographer.encrypt_data(Cryptographer.encrypt_data(sample_directory_hash.to_yaml))
-      Adapters::Dummy.stubs(:read).with(Master.send(:directory_key)).returns(double_encrypted_directory_hash)
+      encrypted_directory_hash = Cryptographer.encrypt_data(sample_directory_hash.to_yaml)
+      Adapters::Dummy.stubs(:read).with(Master.send(:directory_key)).returns(encrypted_directory_hash)
 
       #do actual test
       decrypted_remote_hash = Master.send(:remote_directory_hash)
