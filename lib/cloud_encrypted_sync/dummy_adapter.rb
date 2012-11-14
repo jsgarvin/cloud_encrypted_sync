@@ -24,7 +24,7 @@ module CloudEncryptedSync
           stored_data[bucket_name].delete(key)
         end
 
-        def key_exists?
+        def key_exists?(key)
           stored_data[bucket_name][key] ? true : false
         end
 
@@ -37,6 +37,7 @@ module CloudEncryptedSync
         end
 
         def bucket_name
+          raise RuntimeError, Configuration.settings.inspect
           Configuration.settings[:bucket_name].to_sym
         end
 

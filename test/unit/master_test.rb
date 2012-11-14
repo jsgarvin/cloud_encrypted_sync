@@ -143,5 +143,13 @@ module CloudEncryptedSync
       assert_equal(sample_directory_hash,decrypted_remote_hash)
     end
 
+    test 'should puts error message to stdout' do
+      Configuration.stubs(:settings).raises(IncompleteConfigurationError,'test message')
+      assert_equal('',$stdout.string)
+      Master.expects(:pull_files).never
+      Master.sync
+      assert_match(/test message/,$stdout.string)
+    end
+
   end
 end
