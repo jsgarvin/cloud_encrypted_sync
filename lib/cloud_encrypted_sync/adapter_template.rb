@@ -8,7 +8,7 @@ module CloudEncryptedSync
           Master.register(subclass)
         end
 
-        def parse_command_line_options(opts)
+        def parse_command_line_options(opts,command_line_options)
           raise 'called template method: parse_command_line_options'
         end
 
