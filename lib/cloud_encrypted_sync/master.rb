@@ -42,7 +42,7 @@ module CloudEncryptedSync
             puts "Not Pushing (already exists): #{relative_path}"
           else
             puts "Pushing: #{relative_path}"
-            encrypt_to_adapter(File.read(full_file_path(relative_path)),key)
+            encrypt_to_adapter(File.read(Index.full_file_path(relative_path)),key)
             self.finalize_required = true
           end
           pushed_files_counter += 1
@@ -54,7 +54,7 @@ module CloudEncryptedSync
         progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
         pulled_files_counter = 0
         files_to_pull.each_pair do |key,relative_path|
-          full_path = full_file_path(relative_path)
+          full_path = Index.full_file_path(relative_path)
           if File.exist?(full_path) and (file_key(full_path) == key)
             #already exists. probably left over from an earlier aborted pull
             puts "Not Pulling (already exists): #{path}"
@@ -83,8 +83,8 @@ module CloudEncryptedSync
 
       def delete_local_files!
         local_files_to_delete.each_pair do |key,relative_path|
-          full_path = full_file_path(relative_path)
-          if !File.exist?(full_path) or (file_key(full_path) == key)
+          full_path = Index.full_file_path(relative_path)
+          if !File.exist?(full_path) or (Index.file_key(full_path) == key)
             puts "Not Deleting Local: #{relative_path}"
           else
             puts "Deleting Local: #{relative_path}"
@@ -95,10 +95,7 @@ module CloudEncryptedSync
       end
 
       def finalize!
-        if finalize_required
-          store_directory_hash_file
-          File.open(snapshot_file_path, 'w') { |file| YAML.dump(directory_hash, file) }
-        end
+        Index.write if finalize_required
       end
 
       #######
@@ -137,77 +134,28 @@ module CloudEncryptedSync
         Cryptographer.decrypt_data(adapter.read(key))
       end
 
-      def directory_hash
-        return @directory_hash if @directory_hash
-        @directory_hash = {}
-        progress_meter = ProgressMeter.new(Dir["#{normalized_sync_path}/**/*"].length,:label => 'Compiling Directory Analysis: ')
-        completed_files = 0
-        Find.find(normalized_sync_path) do |path|
-          print progress_meter.update(completed_files)
-          if FileTest.directory?(path)
-            completed_files += 1
-            next
-          else
-            @directory_hash[file_key(path)] = relative_file_path(path)
-            completed_files += 1
-          end
-        end
-        puts
-        return @directory_hash
-      end
-
-      def directory_key
-        @directory_key ||= Cryptographer.hash_data(Configuration.settings[:encryption_key])
-      end
-
-      def normalized_sync_path
-        @normalized_sync_path ||= normalize_sync_path
-      end
-
-      def normalize_sync_path
-        path = Configuration.settings[:sync_path]
-        if path.match(/\/$/)
-          return path
-        else
-          return path + '/'
-        end
-      end
-
       def last_sync_date
-        @last_sync_date ||= File.exist?(snapshot_file_path) ? File.stat(snapshot_file_path).ctime : nil
+        @last_sync_date ||= File.exist?(Index.snapshot_path) ? File.stat(Index.snapshot_path).ctime : nil
       end
 
       def last_sync_hash
-        @last_sync_hash ||= File.exist?(snapshot_file_path) ? YAML.load(File.read(snapshot_file_path)) : {}
+        @last_sync_hash ||= File.exist?(Index.snapshot_path) ? YAML.load(File.read(Index.snapshot_path)) : {}
       end
 
       def files_to_push
-        syncable_files_check(directory_hash,remote_directory_hash)
+        syncable_files_check(Index.local,Index.remote)
       end
 
       def files_to_pull
-        syncable_files_check(remote_directory_hash,directory_hash)
+        syncable_files_check(Index.remote,Index.local)
       end
 
       def remote_files_to_delete
-        deletable_files_check(remote_directory_hash,directory_hash)
+        deletable_files_check(Index.remote,Index.local)
       end
 
       def local_files_to_delete
-        deletable_files_check(directory_hash,remote_directory_hash)
-      end
-
-      def remote_directory_hash
-        @remote_directory_hash ||= begin
-          YAML.parse(decrypt_from_adapter(directory_key)).to_ruby
-        rescue #AWS::S3::Errors::NoSuchKey  should provide error for adapters to raise
-          {}
-        end
-      end
-
-      def store_directory_hash_file
-        @directory_hash = nil #force re-compile before pushing to remote
-        encrypt_to_adapter(directory_hash.to_yaml,directory_key)
+        deletable_files_check(Index.local,Index.remote)
       end
 
       def deletable_files_check(source_hash,comparison_hash)
@@ -222,25 +170,6 @@ module CloudEncryptedSync
         source_hash.select{|k,v| !comparison_hash.has_key?(k) and (last_sync_has_key ? last_sync_hash.has_key?(k) : !last_sync_hash.has_key?(k)) }
       end
 
-      def snapshot_file_path
-        "#{Configuration.data_folder_path}/#{snapshot_filename}"
-      end
-
-      def snapshot_filename
-        "#{normalized_sync_path.gsub(/[^A-Za-z0-9]/,'_')}.snapshot.yml"
-      end
-
-      def file_key(full_path)
-        Cryptographer.hash_data(relative_file_path(full_path) + File.open(full_path).read).to_s
-      end
-
-      def relative_file_path(full_path)
-        full_path.gsub(normalized_sync_path,'')
-      end
-
-      def full_file_path(relative_path)
-        normalized_sync_path+'/'+relative_path
-      end
     end
   end
 

@@ -17,10 +17,10 @@ module CloudEncryptedSync
 
     test 'should generate directory hash' do
       assert_equal('',$stdout.string)
-      hash = Master.send(:directory_hash)
-      assert_match(/\% Complete/,$stdout.string)
+      hash = Index.local
       assert_equal(1,hash.keys.size)
       assert_equal('test_sub_folder/test_file_one.txt',hash[hash.keys.first])
+      assert_match(/\% Complete/,$stdout.string)
     end
 
     test 'should_return_nil_if_never_synced_before' do
@@ -29,10 +29,10 @@ module CloudEncryptedSync
     end
 
     test 'should want to push everything on first run with local files and empty remote' do
-      Master.stubs(:remote_directory_hash).returns({})
-      Master.stubs(:directory_hash).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Index.stubs(:remote).returns({})
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
       Master.stubs(:last_sync_hash).returns({})
-      assert_equal(Master.directory_hash,Master.send(:files_to_push))
+      assert_equal(Index.local,Master.send(:files_to_push))
     end
 
     test 'should encrypt when writing' do
@@ -61,15 +61,15 @@ module CloudEncryptedSync
     end
 
     test 'should want to pull everything on first run with remote files and empty local' do
-      Master.stubs(:remote_directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
-      Master.stubs(:directory_hash).returns({})
+      Index.stubs(:remote).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
+      Index.stubs(:local).returns({})
       Master.stubs(:last_sync_hash).returns({})
       assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Master.send(:files_to_pull))
     end
 
     test 'should pull files' do
-      Master.stubs(:remote_directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
-      Master.stubs(:directory_hash).returns({})
+      Index.stubs(:remote).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
+      Index.stubs(:local).returns({})
       Master.stubs(:last_sync_hash).returns({})
       Adapters::Dummy.expects(:read).with('new_file_key').returns(Cryptographer.encrypt_data('foobar'))
       assert_equal('',$stdout.string)
@@ -80,44 +80,44 @@ module CloudEncryptedSync
     end
 
     test 'should only want to push new files on later run' do
-      Master.stubs(:remote_directory_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
-      Master.stubs(:directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
+      Index.stubs(:remote).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
+      Index.stubs(:local).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
       Master.stubs(:last_sync_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
       assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Master.send(:files_to_push))
     end
 
     test 'should want to pull new files from cloud' do
-      Master.stubs(:remote_directory_hash).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
-      Master.stubs(:directory_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
+      Index.stubs(:remote).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
+      Index.stubs(:local).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
       Master.stubs(:last_sync_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
       assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Master.send(:files_to_pull))
     end
 
     test 'should want to delete locally missing files from cloud' do
-      Master.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      Master.stubs(:directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
+      Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
+      Index.stubs(:local).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
       Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
       assert_equal({'deleted_file_key' => 'test_sub_folder/deleted_file.txt'},Master.send(:remote_files_to_delete))
     end
 
     test 'should delete files from cloud' do
-      Master.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      Master.stubs(:directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
+      Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
+      Index.stubs(:local).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
       Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
       Adapters::Dummy.expects(:delete).with('deleted_file_key').returns(true)
       Master.delete_remote_files!
     end
 
     test 'should want to delete appropriate files locally' do
-      Master.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
-      Master.stubs(:directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
+      Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
+      Index.stubs(:local).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
       Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
       assert_equal({'deleted_file_key' => 'test_sub_folder/deleted_file.txt'},Master.send(:local_files_to_delete))
     end
 
     test 'should delete local files' do
-      Master.stubs(:remote_directory_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
-      Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'}.merge(Master.send(:directory_hash)))
+      Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
+      Master.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'}.merge(Index.local))
       assert_difference('Dir["#{test_source_folder}/**/*"].length',-1) do
         Master.delete_local_files!
       end
@@ -128,7 +128,7 @@ module CloudEncryptedSync
       sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
       Master.instance_variable_set(:@finalize_required,true)
       Master.stubs(:directory_hash).returns(sample_directory_hash)
-      Adapters::Dummy.expects(:write).with(anything,Master.send(:directory_key)).returns(true)
+      Adapters::Dummy.expects(:write).with(anything,Index.send(:index_key)).returns(true)
       Master.finalize!
     end
 
@@ -136,10 +136,10 @@ module CloudEncryptedSync
       #setup mock data
       sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
       encrypted_directory_hash = Cryptographer.encrypt_data(sample_directory_hash.to_yaml)
-      Adapters::Dummy.stubs(:read).with(Master.send(:directory_key)).returns(encrypted_directory_hash)
+      Adapters::Dummy.expects(:read).with(Index.send(:index_key)).returns(encrypted_directory_hash)
 
       #do actual test
-      decrypted_remote_hash = Master.send(:remote_directory_hash)
+      decrypted_remote_hash = Index.remote
       assert_equal(sample_directory_hash,decrypted_remote_hash)
     end
 

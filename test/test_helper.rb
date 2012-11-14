@@ -22,7 +22,7 @@ module CloudEncryptedSync
     def preset_environment
       Configuration.instance_variable_set(:@settings,nil)
       Configuration.instance_variable_set(:@command_line_options,nil)
-      Master.instance_variable_set(:@directory_hash, nil)
+      Index.instance_variable_set(:@local, nil)
       FileUtils.mkdir_p test_source_folder
       FileUtils.mkdir_p test_source_folder + '/test_sub_folder'
       File.open(test_source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
