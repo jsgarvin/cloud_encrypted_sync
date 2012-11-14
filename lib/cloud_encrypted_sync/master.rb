@@ -207,7 +207,7 @@ module CloudEncryptedSync
 
       def store_directory_hash_file
         @directory_hash = nil #force re-compile before pushing to remote
-        encrypt_to_adapter(Cryptographer.encrypt_data(directory_hash.to_yaml),directory_key)
+        encrypt_to_adapter(directory_hash.to_yaml,directory_key)
       end
 
       def deletable_files_check(source_hash,comparison_hash)
