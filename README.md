@@ -23,10 +23,6 @@ preferred cloud.
 CES runs as a command line tool and takes options as CLI arguments and/or from a config file.
 Arguments passed at the command line take precedence over those in the config file.
 
-### Creating a valid encryption key and initialization vector.
-
-TODO
-
 ### Example
 
     ces --adapter=s3 --bucket=my-backup-bucket \
