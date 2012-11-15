@@ -35,21 +35,6 @@ module CloudEncryptedSync
       assert_equal(Index.local,Master.send(:files_to_push))
     end
 
-    test 'should encrypt when writing' do
-      precrypted_data = File.read(test_source_folder + '/test_sub_folder/test_file_one.txt')
-      key = Cryptographer.hash_data('test_file_key')
-      Adapters::Dummy.expects(:write).with(anything,key).returns(true)
-      Master.send(:encrypt_to_adapter,precrypted_data,key)
-    end
-
-    test 'should decrypt_when_reading' do
-      precrypted_data = File.read(test_source_folder + '/test_sub_folder/test_file_one.txt')
-      encrypted_data = Cryptographer.encrypt_data(precrypted_data)
-      key = Cryptographer.hash_data('test_file_key')
-      Adapters::Dummy.expects(:read).with(key).returns(encrypted_data)
-      assert_equal(precrypted_data,Master.send(:decrypt_from_adapter,key))
-    end
-
     test 'should push files' do
       Master.stubs(:remote_directory_hash).returns({})
       Master.stubs(:last_sync_hash).returns({})

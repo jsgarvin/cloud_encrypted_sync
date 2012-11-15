@@ -5,7 +5,7 @@ module CloudEncryptedSync
       class << self
 
         def inherited(subclass)
-          Master.register(subclass)
+          AdapterLiaison.instance.register(subclass)
         end
 
         def parse_command_line_options(opts,command_line_options)

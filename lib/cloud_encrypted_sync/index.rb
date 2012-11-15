@@ -3,14 +3,13 @@ module CloudEncryptedSync
 
     class << self
 
-
       def local
         @local ||= compile_local_hash
       end
 
       def remote
         @remote ||= begin
-          YAML.parse(Master.send(:decrypt_from_adapter,index_key)).to_ruby
+          YAML.parse(liaison.pull(index_key)).to_ruby
         rescue #AWS::S3::Errors::NoSuchKey  should provide error for adapters to raise
           {}
         end
@@ -18,7 +17,7 @@ module CloudEncryptedSync
 
       def write
         local_hash = compile_local_hash #recompile
-        Master.send(:encrypt_to_adapter,local_hash.to_yaml,index_key) #push to remote
+        liaison.push(local_hash.to_yaml,index_key) #push to remote
         File.open(snapshot_path, 'w') { |file| YAML.dump(local_hash, file) } #save to local
       end
 
@@ -37,6 +36,10 @@ module CloudEncryptedSync
       #######
       private
       #######
+
+      def liaison
+        AdapterLiaison.instance
+      end
 
       def compile_local_hash
         hash = {}

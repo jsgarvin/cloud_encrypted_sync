@@ -6,18 +6,8 @@ module CloudEncryptedSync
 
     class << self
       attr_accessor :finalize_required
-      attr_reader   :command_line_options, :adapters
-      attr_writer   :sync_path
-
-      def register(adapter)
-        @adapters ||= {}
-        name = adapter.name.match(/([^:]+)$/)[0].underscore.to_sym
-        raise RegistrationError, "#{name} already registered" if @adapters[name]
-        @adapters[name] = adapter
-      end
 
       def activate!
-        find_and_require_adapters
         sync
       end
 
@@ -38,12 +28,12 @@ module CloudEncryptedSync
         pushed_files_counter = 0
         files_to_push.each_pair do |key,relative_path|
           puts #newline for progress meter
-          if adapter.key_exists?(key)
+          if liaison.key_exists?(key)
             #already exists. probably left over from an earlier aborted push
             puts "Not Pushing (already exists): #{relative_path}"
           else
             puts "Pushing: #{relative_path}"
-            encrypt_to_adapter(File.read(Index.full_file_path(relative_path)),key)
+            liaison.push(File.read(Index.full_file_path(relative_path)),key)
             self.finalize_required = true
           end
           pushed_files_counter += 1
@@ -64,7 +54,7 @@ module CloudEncryptedSync
             Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
             puts "Pulling: #{relative_path}"
             begin
-              File.open(full_path,'w') { |file| file.write(decrypt_from_adapter(key)) }
+              File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
               self.finalize_required = true
             rescue #AWS::S3::Errors::NoSuchKey  Should provide error for adapters to raise
               puts "Failed to pull #{relative_path}"
@@ -78,7 +68,7 @@ module CloudEncryptedSync
       def delete_remote_files!
         remote_files_to_delete.each_pair do |key,path|
           puts "Deleting Remote: #{path}"
-          adapter.delete(key)
+          liaison.delete(key)
           self.finalize_required = true
         end
       end
@@ -104,36 +94,8 @@ module CloudEncryptedSync
       private
       #######
 
-      def find_and_require_adapters
-        latest_versions_of_installed_adapters.each_pair do |adapter_name,adapter_version|
-          require File.expand_path("../../../../cloud_encrypted_sync_#{adapter_name}_adapter-#{adapter_version}", __FILE__)
-        end
-      end
-
-      def latest_versions_of_installed_adapters
-        glob_path = '../../../../cloud_encrypted_sync_*_adapter-*/lib/*.rb'
-        Dir.glob(File.expand_path(glob_path,__FILE__)).inject({}) do |hash,adapter_path|
-          if adapter_path.match(/cloud_encrypted_sync_(.+)_adapter-(.+)/)
-            adapter_name = $1
-            adapter_version = $2
-            if hash[adapter_name].to_s < adapter_version
-              hash[adapter_name] = adapter_version
-            end
-          end
-          hash
-        end
-      end
-
-      def adapter
-        @adapters[Configuration.settings[:adapter_name].to_sym]
-      end
-
-      def encrypt_to_adapter(data,key)
-        adapter.write(Cryptographer.encrypt_data(data),key)
-      end
-
-      def decrypt_from_adapter(key)
-        Cryptographer.decrypt_data(adapter.read(key))
+      def liaison
+        AdapterLiaison.instance
       end
 
       def last_sync_date
