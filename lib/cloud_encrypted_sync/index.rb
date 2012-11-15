@@ -38,24 +38,16 @@ module CloudEncryptedSync
       private
       #######
 
-      def store_directory_hash_file
-        @directory_hash = nil #force re-compile before pushing to remote
-
-      end
-
       def compile_local_hash
         hash = {}
         progress_meter = ProgressMeter.new(Dir["#{normalized_sync_path}/**/*"].length,:label => 'Compiling Local Index: ')
         completed_files = 0
         Find.find(normalized_sync_path) do |path|
           print progress_meter.update(completed_files)
-          if FileTest.directory?(path)
-            completed_files += 1
-            next
-          else
+          unless FileTest.directory?(path)
             hash[file_key(path)] = relative_file_path(path)
-            completed_files += 1
           end
+          completed_files += 1
         end
         puts #newline for progress meter
         return hash
