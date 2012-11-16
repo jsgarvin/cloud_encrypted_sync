@@ -3,16 +3,6 @@ require 'test_helper'
 module CloudEncryptedSync
   class AdapterLiaisonTest < ActiveSupport::TestCase
 
-    def setup
-      Configuration.stubs(:settings).returns({
-        :encryption_key => 'asdf',
-        :adapter_name => 'dummy',
-        :bucket => "test-bucket",
-        :sync_path => test_source_folder
-      })
-      Configuration.stubs(:data_folder_path).returns("#{Etc.getpwuid.dir}/.cloud_encrypted_sync")
-    end
-
     test 'should encrypt when writing' do
       precrypted_data = File.read(test_source_folder + '/test_sub_folder/test_file_one.txt')
       key = Cryptographer.hash_data('test_file_key')

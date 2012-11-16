@@ -20,14 +20,28 @@ module CloudEncryptedSync
     teardown :release_stdout
 
     def preset_environment
-      Configuration.instance_variable_set(:@settings,nil)
-      Configuration.instance_variable_set(:@command_line_options,nil)
+      stub_configuration
       Index.instance_variable_set(:@local, nil)
       FileUtils.mkdir_p test_source_folder
       FileUtils.mkdir_p test_source_folder + '/test_sub_folder'
       File.open(test_source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
         test_file.write('Test File One')
       end
+    end
+
+    def stub_configuration
+      Configuration.stubs(:settings).returns({
+        :encryption_key => 'asdf',
+        :adapter_name => 'dummy',
+        :bucket => "test-bucket",
+        :sync_path => test_source_folder
+      })
+      Configuration.stubs(:data_folder_path).returns("#{Etc.getpwuid.dir}/.cloud_encrypted_sync")
+    end
+
+    def unstub_configuration
+      Configuration.unstub(:settings)
+      Configuration.unstub(:data_folder_path)
     end
 
     def test_source_folder

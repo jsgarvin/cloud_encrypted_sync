@@ -3,16 +3,6 @@ require 'test_helper'
 module CloudEncryptedSync
   class SynchronizerTest < ActiveSupport::TestCase
 
-    def setup
-      Configuration.stubs(:settings).returns({
-        :encryption_key => 'asdf',
-        :adapter_name => 'dummy',
-        :bucket => "test-bucket",
-        :sync_path => test_source_folder
-      })
-      Configuration.stubs(:data_folder_path).returns("#{Etc.getpwuid.dir}/.cloud_encrypted_sync")
-    end
-
     test 'should generate directory hash' do
       assert_equal('',$stdout.string)
       hash = Index.local

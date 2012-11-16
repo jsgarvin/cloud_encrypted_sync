@@ -4,6 +4,7 @@ module CloudEncryptedSync
   class ConfigurationTest < ActiveSupport::TestCase
 
     def setup
+      unstub_configuration
       Configuration.instance_variable_set(:@command_line_options,nil)
       Configuration.instance_variable_set(:@settings,nil)
       Configuration.instance_variable_set(:@option_parser,nil)
