@@ -1,20 +1,16 @@
 module CloudEncryptedSync
-  class Master
+  class Synchronizer
 
     class << self
       attr_accessor :finalize_required
 
-      def activate!
-        sync
-      end
-
-      def sync
+      def run
         begin
-          CloudEncryptedSync::Master.delete_local_files!
-          CloudEncryptedSync::Master.delete_remote_files!
-          CloudEncryptedSync::Master.pull_files!
-          CloudEncryptedSync::Master.push_files!
-          CloudEncryptedSync::Master.finalize!
+          delete_local_files!
+          delete_remote_files!
+          pull_files!
+          push_files!
+          finalize!
         rescue Errors::IncompleteConfigurationError => exception
           puts exception.message
         end

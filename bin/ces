@@ -2,4 +2,4 @@
 require 'optparse'
 require 'etc'
 require File.expand_path('../../lib/cloud_encrypted_sync', __FILE__)
-CloudEncryptedSync::Master.activate!
+CloudEncryptedSync::Synchronizer.run
