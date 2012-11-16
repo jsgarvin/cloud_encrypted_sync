@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'yaml'
 
 module CloudEncryptedSync
   class MasterTest < ActiveSupport::TestCase
@@ -7,7 +6,6 @@ module CloudEncryptedSync
     def setup
       Configuration.stubs(:settings).returns({
         :encryption_key => 'asdf',
-        :initialization_vector => 'qwerty',
         :adapter_name => 'dummy',
         :bucket => "test-bucket",
         :sync_path => test_source_folder

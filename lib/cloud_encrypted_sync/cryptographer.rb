@@ -1,6 +1,3 @@
-require 'openssl'
-require 'digest'
-
 module CloudEncryptedSync
   class Cryptographer
     ALGORITHM = 'AES-256-CBC'

@@ -1,3 +1,10 @@
+require 'singleton'
+require 'yaml'
+require 'openssl'
+require 'digest'
+require 'find'
+require 'active_support/core_ext/string'
+
 require File.expand_path('../cloud_encrypted_sync/master', __FILE__)
 
 require File.expand_path('../cloud_encrypted_sync/adapter_liaison', __FILE__)

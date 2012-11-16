@@ -1,6 +1,3 @@
-require 'find'
-require 'active_support/core_ext/string'
-
 module CloudEncryptedSync
   class Master
 
