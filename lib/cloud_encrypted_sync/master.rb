@@ -18,7 +18,7 @@ module CloudEncryptedSync
           CloudEncryptedSync::Master.pull_files!
           CloudEncryptedSync::Master.push_files!
           CloudEncryptedSync::Master.finalize!
-        rescue IncompleteConfigurationError => exception
+        rescue Errors::IncompleteConfigurationError => exception
           puts exception.message
         end
       end
@@ -56,7 +56,7 @@ module CloudEncryptedSync
             begin
               File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
               self.finalize_required = true
-            rescue #AWS::S3::Errors::NoSuchKey  Should provide error for adapters to raise
+            rescue Errors::NoSuchKey
               puts "Failed to pull #{relative_path}"
             end
           end
@@ -136,6 +136,4 @@ module CloudEncryptedSync
 
     end
   end
-
-  class RegistrationError < RuntimeError; end
 end

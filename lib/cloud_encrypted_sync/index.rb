@@ -10,7 +10,7 @@ module CloudEncryptedSync
       def remote
         @remote ||= begin
           YAML.parse(liaison.pull(index_key)).to_ruby
-        rescue #AWS::S3::Errors::NoSuchKey  should provide error for adapters to raise
+        rescue Errors::NoSuchKey
           {}
         end
       end

@@ -32,10 +32,10 @@ module CloudEncryptedSync
 
         if loaded_settings[:sync_path].nil?
           message = "You must supply a path to a folder to sync.\n\n#{option_parser.help}"
-          raise IncompleteConfigurationError.new(message)
+          raise Errors::IncompleteConfigurationError.new(message)
         elsif loaded_settings[:encryption_key].nil? or loaded_settings[:encryption_key].empty?
           message = "You must supply an encryption key.\n\n#{option_parser.help}"
-          raise IncompleteConfigurationError.new(message)
+          raise Errors::IncompleteConfigurationError.new(message)
         end
 
         return loaded_settings
@@ -77,6 +77,4 @@ module CloudEncryptedSync
 
     end
   end
-
-  class IncompleteConfigurationError < RuntimeError; end
 end

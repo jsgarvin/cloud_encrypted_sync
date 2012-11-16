@@ -129,7 +129,7 @@ module CloudEncryptedSync
     end
 
     test 'should puts error message to stdout' do
-      Configuration.stubs(:settings).raises(IncompleteConfigurationError,'test message')
+      Configuration.stubs(:settings).raises(Errors::IncompleteConfigurationError,'test message')
       assert_equal('',$stdout.string)
       Master.expects(:pull_files).never
       Master.sync

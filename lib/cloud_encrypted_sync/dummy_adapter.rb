@@ -16,7 +16,7 @@ module CloudEncryptedSync
         end
 
         def read(key)
-          raise "key doesn't exist" unless key_exists?(key)
+          raise Errors::NoSuchKey.new("key doesn't exist: #{key}") unless key_exists?(key)
           stored_data[bucket_name][key]
         end
 
@@ -37,7 +37,6 @@ module CloudEncryptedSync
         end
 
         def bucket_name
-          raise RuntimeError, Configuration.settings.inspect
           Configuration.settings[:bucket_name].to_sym
         end
 

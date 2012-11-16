@@ -21,12 +21,12 @@ module CloudEncryptedSync
 
     test 'should gracefully fail without path in ARGV' do
       ::ARGV = '--adapter dummy --bucket foobar'.split(/\s/)
-      assert_raise(IncompleteConfigurationError) { Configuration.settings }
+      assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
     end
 
     test 'should gracefully fail when not provided encryption_key and vector provided path in ARGV' do
       ::ARGV = '--adapter dummy --bucket foobar /some/path/to/sync'.split(/\s/)
-      assert_raise(IncompleteConfigurationError) { Configuration.settings }
+      assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
     end
 
   end

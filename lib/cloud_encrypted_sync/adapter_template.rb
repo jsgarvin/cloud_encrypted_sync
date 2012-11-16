@@ -9,23 +9,23 @@ module CloudEncryptedSync
         end
 
         def parse_command_line_options(opts,command_line_options)
-          raise 'called template method: parse_command_line_options'
+          raise Errors::TemplateMethodCalled.new('parse_command_line_options')
         end
 
         def write(data, key)
-          raise 'called template method: write'
+          raise Errors::TemplateMethodCalled.new('write')
         end
 
         def read(key)
-          raise 'called template method: read'
+          raise Errors::TemplateMethodCalled.new('read')
         end
 
         def delete(key)
-          raise 'called template method: delete'
+          raise Errors::TemplateMethodCalled.new('delete')
         end
 
         def key_exists?(key)
-          raise 'called template method: key_exists?'
+          raise Errors::TemplateMethodCalled.new('key_exists?')
         end
 
       end

@@ -11,7 +11,7 @@ module CloudEncryptedSync
     def register(adapter)
       name = adapter.name.match(/([^:]+)$/)[0].underscore.to_sym
       if @adapters[name]
-        raise RegistrationError, "#{name} already registered"
+        raise Errors::RegistrationError.new("#{name} already registered")
       else
         @adapters[name] = adapter
       end
