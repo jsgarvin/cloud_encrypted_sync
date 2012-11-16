@@ -38,11 +38,7 @@ module CloudEncryptedSync
 
         def register_subclass_with_parent(subclass)
           name = formated_name_of(subclass)
-          if children[name]
-            raise Errors::RegistrationError.new("#{name} already registered")
-          else
-            children[name] = subclass
-          end
+          children[name] ||= subclass
         end
 
         def formated_name_of(subclass)
