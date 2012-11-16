@@ -1,20 +1,9 @@
 module CloudEncryptedSync
   class AdapterLiaison
     include Singleton
-    attr_reader :adapters
 
     def initialize
-      @adapters = {}
       find_and_require_adapters
-    end
-
-    def register(adapter)
-      name = adapter.name.match(/([^:]+)$/)[0].underscore.to_sym
-      if @adapters[name]
-        raise Errors::RegistrationError.new("#{name} already registered")
-      else
-        @adapters[name] = adapter
-      end
     end
 
     def push(data,key)
@@ -31,6 +20,10 @@ module CloudEncryptedSync
 
     def key_exists?(key)
       adapter.key_exists?(key)
+    end
+
+    def adapters
+      Adapters::Template.children
     end
 
     #######
@@ -58,7 +51,7 @@ module CloudEncryptedSync
     end
 
     def adapter
-      @adapters[Configuration.settings[:adapter_name].to_sym]
+      adapters[Configuration.settings[:adapter_name].to_sym]
     end
   end
 end

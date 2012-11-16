@@ -5,7 +5,11 @@ module CloudEncryptedSync
       class << self
 
         def inherited(subclass)
-          AdapterLiaison.instance.register(subclass)
+          register_subclass_with_parent(subclass)
+        end
+
+        def children
+          @children ||= {}
         end
 
         def parse_command_line_options(opts,command_line_options)
@@ -28,6 +32,22 @@ module CloudEncryptedSync
           raise Errors::TemplateMethodCalled.new('key_exists?')
         end
 
+        #######
+        private
+        #######
+
+        def register_subclass_with_parent(subclass)
+          name = formated_name_of(subclass)
+          if children[name]
+            raise Errors::RegistrationError.new("#{name} already registered")
+          else
+            children[name] = subclass
+          end
+        end
+
+        def formated_name_of(subclass)
+          subclass.name.match(/([^:]+)$/)[0].underscore.to_sym
+        end
       end
     end
   end

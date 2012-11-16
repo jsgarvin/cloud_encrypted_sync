@@ -44,7 +44,7 @@ module CloudEncryptedSync
         files_to_pull.each_pair do |key,relative_path|
           full_path = Index.full_file_path(relative_path)
           puts #newline for progress meter
-          if File.exist?(full_path) and (file_key(full_path) == key)
+          if File.exist?(full_path) and (Index.file_key(full_path) == key)
             #already exists. probably left over from an earlier aborted pull
             puts "Not Pulling (already exists): #{path}"
           else
