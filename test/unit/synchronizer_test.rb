@@ -3,14 +3,6 @@ require 'test_helper'
 module CloudEncryptedSync
   class SynchronizerTest < ActiveSupport::TestCase
 
-    test 'should generate directory hash' do
-      assert_equal('',$stdout.string)
-      hash = Index.local
-      assert_equal(1,hash.keys.size)
-      assert_equal('test_sub_folder/test_file_one.txt',hash[hash.keys.first])
-      assert_match(/\% Complete/,$stdout.string)
-    end
-
     test 'should_return_nil_if_never_synced_before' do
       Synchronizer.stubs(:snapshot_file_path).returns('/non/existant/file')
       assert_equal(nil,Synchronizer.send(:last_sync_date))

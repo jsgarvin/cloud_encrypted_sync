@@ -21,7 +21,6 @@ module CloudEncryptedSync
 
     def preset_environment
       stub_configuration
-      Index.instance_variable_set(:@local, nil)
       FileUtils.mkdir_p test_source_folder
       FileUtils.mkdir_p test_source_folder + '/test_sub_folder'
       File.open(test_source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
