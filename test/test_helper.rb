@@ -13,19 +13,15 @@ require 'cloud_encrypted_sync'
 module CloudEncryptedSync
   class ActiveSupport::TestCase
 
-    setup :activate_fake_fs
-    setup :preset_environment
+    setup :initialize_environment
     setup :capture_stdout
     teardown :deactivate_fake_fs
     teardown :release_stdout
 
-    def preset_environment
+    def initialize_environment
+      initialize_fake_fs
       stub_configuration
-      FileUtils.mkdir_p test_source_folder
-      FileUtils.mkdir_p test_source_folder + '/test_sub_folder'
-      File.open(test_source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
-        test_file.write('Test File One')
-      end
+      Index.instance_variable_set(:@remote,nil)
     end
 
     def stub_configuration
@@ -47,9 +43,14 @@ module CloudEncryptedSync
       @test_source_folder ||= File.expand_path('../test_folder',  __FILE__)
     end
 
-    def activate_fake_fs
+    def initialize_fake_fs
       FakeFS.activate!
       FakeFS::FileSystem.clear
+      FileUtils.mkdir_p test_source_folder
+      FileUtils.mkdir_p test_source_folder + '/test_sub_folder'
+      File.open(test_source_folder + '/test_sub_folder/test_file_one.txt', 'w') do |test_file|
+        test_file.write('Test File One')
+      end
     end
 
     def deactivate_fake_fs

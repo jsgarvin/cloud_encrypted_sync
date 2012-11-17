@@ -116,5 +116,43 @@ module CloudEncryptedSync
       assert_match(/test message/,$stdout.string)
     end
 
+    test 'should successfully run sync' do
+      Synchronizer.expects(:delete_local_files!).returns(true)
+      Synchronizer.expects(:delete_remote_files!).returns(true)
+      Synchronizer.expects(:pull_files!).returns(true)
+      Synchronizer.expects(:push_files!).returns(true)
+      Synchronizer.expects(:finalize!).returns(true)
+      Synchronizer.run
+    end
+
+    test 'should not push files that already exist' do
+      Synchronizer.stubs(:files_to_push).returns({:foo => 'bar'})
+      AdapterLiaison.instance.stubs(:key_exists?).returns(true)
+      Synchronizer.push_files!
+      assert_match(/\(already exists\)/,$stdout.string)
+    end
+
+    test 'should not pull files that already exist' do
+      Synchronizer.stubs(:files_to_pull).returns({:foo => 'bar'})
+      File.stubs(:exist?).returns(true)
+      Index.stubs(:file_key).returns(:foo)
+      Synchronizer.pull_files!
+      assert_match(/\(already exists\)/,$stdout.string)
+    end
+
+    test 'should gracefully recover if pull fails' do
+      Synchronizer.stubs(:files_to_pull).returns({:foo => 'bar'})
+      AdapterLiaison.instance.stubs(:pull).raises(Errors::NoSuchKey)
+      Synchronizer.pull_files!
+      assert_match(/Failed to pull/,$stdout.string)
+    end
+
+    test 'should gracefully recover if local file disappears before delete' do
+      Synchronizer.stubs(:local_files_to_delete).returns({:foo => 'bar'})
+      File.stubs(:exist?).returns(false)
+      Synchronizer.delete_local_files!
+      assert_match(/Not Deleting Local/,$stdout.string)
+    end
+
   end
 end

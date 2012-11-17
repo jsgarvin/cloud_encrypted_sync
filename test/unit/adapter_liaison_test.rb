@@ -18,5 +18,19 @@ module CloudEncryptedSync
       assert_equal(precrypted_data,AdapterLiaison.instance.pull(key))
     end
 
+    test 'should find adapters' do
+      Dir.stubs(:glob).returns([
+        '/path/cloud_encrypted_sync_first_test_adapter-1.2.3',
+        '/path/cloud_encrypted_sync_second_test_adapter-4.5.6',
+        '/path/cloud_encrypted_sync_second_test_adapter-7.8.9'
+      ])
+      assert_equal({'first_test' => '1.2.3', 'second_test' => '7.8.9'}, AdapterLiaison.instance.send(:latest_versions_of_installed_adapters))
+    end
+
+    test 'should require adapters' do
+      AdapterLiaison.instance.stubs(:latest_versions_of_installed_adapters).returns({'first_test' => '1.2.3'})
+      assert_raises(LoadError) { AdapterLiaison.instance.send(:find_and_require_adapters) }
+    end
+
   end
 end

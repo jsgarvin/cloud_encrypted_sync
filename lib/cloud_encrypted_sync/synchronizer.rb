@@ -17,7 +17,7 @@ module CloudEncryptedSync
       end
 
       def push_files!
-        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pushing Files: ')
+        progress_meter = ProgressMeter.new(files_to_push.keys.size,:label => 'Pushing Files: ')
         pushed_files_counter = 0
         files_to_push.each_pair do |key,relative_path|
           puts #newline for progress meter
@@ -42,7 +42,7 @@ module CloudEncryptedSync
           puts #newline for progress meter
           if File.exist?(full_path) and (Index.file_key(full_path) == key)
             #already exists. probably left over from an earlier aborted pull
-            puts "Not Pulling (already exists): #{path}"
+            puts "Not Pulling (already exists): #{full_path}"
           else
             Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
             puts "Pulling: #{relative_path}"
