@@ -3,6 +3,15 @@ require 'test_helper'
 module CloudEncryptedSync
   class AdapterTemplateTest < ActiveSupport::TestCase
 
+    test 'should register with parent class on inheritance' do
+      Adapters::Template.expects(:register_subclass_with_parent).returns(true)
+      Class.new(Adapters::Template)
+    end
+
+    test 'should contain registered adapters' do
+      assert_equal([:dummy],Adapters::Template.children.keys)
+    end
+
     test 'should raise errors on public methods' do
 
       method_argument_map = {

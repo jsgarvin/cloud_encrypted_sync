@@ -42,6 +42,7 @@ module CloudEncryptedSync
         end
 
         def formated_name_of(subclass)
+          puts "Subclass: #{subclass}"
           subclass.name.match(/([^:]+)$/)[0].underscore.to_sym
         end
       end
