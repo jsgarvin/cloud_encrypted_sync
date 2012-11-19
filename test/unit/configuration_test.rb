@@ -13,7 +13,11 @@ module CloudEncryptedSync
 
     test 'should load settings' do
       ::ARGV = '--adapter dummy --bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters /some/path'.split(/\s/)
-      assert_equal(Hash,Configuration.settings.class)
+      settings = Configuration.settings
+      assert_equal('dummy',settings[:adapter_name])
+      assert_equal('~/test/folder',settings[:data_dir])
+      assert_equal('somestringofcharacters',settings[:encryption_key])
+      assert_equal('foobar',settings[:bucket])
     end
 
     test 'should gracefully fail without path in ARGV' do

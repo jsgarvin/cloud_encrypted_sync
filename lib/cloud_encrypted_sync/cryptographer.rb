@@ -4,7 +4,6 @@ module CloudEncryptedSync
 
     class << self
 
-
       def encrypt_data(data)
         iv = generate_random_iv
         encrypted_data = crypt_data(:encrypt, iv, data)
@@ -19,10 +18,6 @@ module CloudEncryptedSync
 
       def hash_data(data)
         Digest::SHA2.hexdigest(data,512)
-      end
-
-      def generate_random_key
-        initialized_cipher.random_key.unpack('H*')[0]
       end
 
       #######
