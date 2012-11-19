@@ -30,5 +30,11 @@ module CloudEncryptedSync
       assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
     end
 
+    test 'should create data folder if it does not exist' do
+      ::ARGV = '--adapter dummy --bucket foobar --data-dir /test --encryption-key somestringofcharacters /some/path'.split(/\s/)
+      assert ! File.exist?('/test')
+      Configuration.settings
+      assert File.exist?('/test')
+    end
   end
 end
