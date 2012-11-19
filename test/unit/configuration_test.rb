@@ -17,7 +17,7 @@ module CloudEncryptedSync
       assert_equal('dummy',settings[:adapter_name])
       assert_equal('~/test/folder',settings[:data_dir])
       assert_equal('somestringofcharacters',settings[:encryption_key])
-      assert_equal('foobar',settings[:bucket_name])
+      assert_equal('foobar',settings[:bucket])
     end
 
     test 'should gracefully fail without path in ARGV' do

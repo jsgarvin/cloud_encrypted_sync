@@ -6,17 +6,17 @@ module CloudEncryptedSync
 
       def run
         begin
-          delete_local_files!
-          delete_remote_files!
-          pull_files!
-          push_files!
-          finalize!
+          delete_local_files
+          delete_remote_files
+          pull_files
+          push_files
+          finalize
         rescue Errors::IncompleteConfigurationError => exception
           puts exception.message
         end
       end
 
-      def push_files!
+      def push_files
         progress_meter = ProgressMeter.new(files_to_push.keys.size,:label => 'Pushing Files: ')
         pushed_files_counter = 0
         files_to_push.each_pair do |key,relative_path|
@@ -34,7 +34,7 @@ module CloudEncryptedSync
         end
       end
 
-      def pull_files!
+      def pull_files
         progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
         pulled_files_counter = 0
         files_to_pull.each_pair do |key,relative_path|
@@ -58,7 +58,7 @@ module CloudEncryptedSync
         end
       end
 
-      def delete_remote_files!
+      def delete_remote_files
         remote_files_to_delete.each_pair do |key,path|
           puts "Deleting Remote: #{path}"
           liaison.delete(key)
@@ -66,7 +66,7 @@ module CloudEncryptedSync
         end
       end
 
-      def delete_local_files!
+      def delete_local_files
         local_files_to_delete.each_pair do |key,relative_path|
           full_path = Index.full_file_path(relative_path)
           if !File.exist?(full_path) or (Index.file_key(full_path) == key)
@@ -79,7 +79,7 @@ module CloudEncryptedSync
         end
       end
 
-      def finalize!
+      def finalize
         Index.write if finalize_required
       end
 
@@ -89,10 +89,6 @@ module CloudEncryptedSync
 
       def liaison
         AdapterLiaison.instance
-      end
-
-      def last_sync_date
-        @last_sync_date ||= File.exist?(Index.snapshot_path) ? File.stat(Index.snapshot_path).ctime : nil
       end
 
       def last_sync_hash

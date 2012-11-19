@@ -10,7 +10,7 @@ module CloudEncryptedSync
 
         def parse_command_line_options(opts,command_line_options)
           opts.on('--bucket BUCKETNAME', 'Name of cloud adapter to use.') do |bucket_name|
-            command_line_options[:bucket_name] = bucket_name
+            command_line_options[:bucket] = bucket_name
           end
           return command_line_options
         end
@@ -37,7 +37,7 @@ module CloudEncryptedSync
         end
 
         def bucket_name
-          Configuration.settings[:bucket_name].to_sym
+          Configuration.settings[:bucket].to_sym
         end
 
       end

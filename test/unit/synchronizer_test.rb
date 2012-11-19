@@ -3,66 +3,61 @@ require 'test_helper'
 module CloudEncryptedSync
   class SynchronizerTest < ActiveSupport::TestCase
 
-    test 'should_return_nil_if_never_synced_before' do
-      Synchronizer.stubs(:snapshot_file_path).returns('/non/existant/file')
-      assert_equal(nil,Synchronizer.send(:last_sync_date))
+    SYNC_METHODS = [:delete_local_files, :delete_remote_files, :push_files, :pull_files, :finalize]
+
+    test 'should run full sync' do
+      SYNC_METHODS.each { |method_name| Synchronizer.expects(method_name) }
+
+      Synchronizer.run
     end
 
-    test 'should want to push everything on first run with local files and empty remote' do
-      Index.stubs(:remote).returns({})
-      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
-      Synchronizer.stubs(:last_sync_hash).returns({})
-      assert_equal(Index.local,Synchronizer.send(:files_to_push))
+    test 'should puts error message to stdout when config is incomplete' do
+      Configuration.stubs(:settings).raises(Errors::IncompleteConfigurationError,'test message')
+      AdapterLiaison.expects(:push).never
+      AdapterLiaison.expects(:pull).never
+
+      assert_equal('',$stdout.string)
+      Synchronizer.run
+      assert_match(/test message/,$stdout.string)
     end
 
     test 'should push files' do
-      Synchronizer.stubs(:remote_directory_hash).returns({})
-      Synchronizer.stubs(:last_sync_hash).returns({})
-      Adapters::Dummy.stubs(:key_exists?).returns(false)
-      Adapters::Dummy.expects(:write).with(any_parameters).returns(true)
+      Adapters::Dummy.expects(:write)
+
       assert_equal('',$stdout.string)
-      Synchronizer.push_files!
+      Synchronizer.push_files
       assert_match(/\% Complete/,$stdout.string)
     end
 
-    test 'should want to pull everything on first run with remote files and empty local' do
-      Index.stubs(:remote).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
-      Index.stubs(:local).returns({})
-      Synchronizer.stubs(:last_sync_hash).returns({})
-      assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Synchronizer.send(:files_to_pull))
+    test 'should not push files that already exist' do
+      AdapterLiaison.instance.stubs(:key_exists?).returns(true)
+      Synchronizer.push_files
+      assert_match(/\(already exists\)/,$stdout.string)
     end
 
     test 'should pull files' do
       Index.stubs(:remote).returns({'new_file_key' => 'test_sub_folder/new_file.txt'})
-      Index.stubs(:local).returns({})
-      Synchronizer.stubs(:last_sync_hash).returns({})
       Adapters::Dummy.expects(:read).with('new_file_key').returns(Cryptographer.encrypt_data('foobar'))
       assert_equal('',$stdout.string)
       assert_difference('Dir["#{test_source_folder}/**/*"].length') do
-        Synchronizer.pull_files!
+        Synchronizer.pull_files
       end
       assert_match(/\% Complete/,$stdout.string)
     end
 
-    test 'should only want to push new files on later run' do
-      Index.stubs(:remote).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
-      Index.stubs(:local).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
-      Synchronizer.stubs(:last_sync_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
-      assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Synchronizer.send(:files_to_push))
+    test 'should not pull files that already exist' do
+      Synchronizer.stubs(:files_to_pull).returns({:foo => 'bar'})
+      File.stubs(:exist?).returns(true)
+      Index.stubs(:file_key).returns(:foo)
+      Synchronizer.pull_files
+      assert_match(/\(already exists\)/,$stdout.string)
     end
 
-    test 'should want to pull new files from cloud' do
-      Index.stubs(:remote).returns({'new_file_key' => 'test_sub_folder/new_file.txt', 'old_file_key' => 'test_sub_folder/old_file.txt'})
-      Index.stubs(:local).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
-      Synchronizer.stubs(:last_sync_hash).returns({'old_file_key' => 'test_sub_folder/old_file.txt'})
-      assert_equal({'new_file_key' => 'test_sub_folder/new_file.txt'},Synchronizer.send(:files_to_pull))
-    end
-
-    test 'should want to delete locally missing files from cloud' do
-      Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      Index.stubs(:local).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
-      Synchronizer.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      assert_equal({'deleted_file_key' => 'test_sub_folder/deleted_file.txt'},Synchronizer.send(:remote_files_to_delete))
+    test 'should gracefully recover if pull fails' do
+      Synchronizer.stubs(:files_to_pull).returns({:foo => 'bar'})
+      AdapterLiaison.instance.stubs(:pull).raises(Errors::NoSuchKey)
+      Synchronizer.pull_files
+      assert_match(/Failed to pull/,$stdout.string)
     end
 
     test 'should delete files from cloud' do
@@ -70,89 +65,105 @@ module CloudEncryptedSync
       Index.stubs(:local).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
       Synchronizer.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
       Adapters::Dummy.expects(:delete).with('deleted_file_key').returns(true)
-      Synchronizer.delete_remote_files!
-    end
-
-    test 'should want to delete appropriate files locally' do
-      Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
-      Index.stubs(:local).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      Synchronizer.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'})
-      assert_equal({'deleted_file_key' => 'test_sub_folder/deleted_file.txt'},Synchronizer.send(:local_files_to_delete))
+      Synchronizer.delete_remote_files
+      assert_match(/Deleting Remote/,$stdout.string)
     end
 
     test 'should delete local files' do
       Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
       Synchronizer.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'}.merge(Index.local))
       assert_difference('Dir["#{test_source_folder}/**/*"].length',-1) do
-        Synchronizer.delete_local_files!
+        Synchronizer.delete_local_files
       end
-    end
-
-    test 'should finalize' do
-      FileUtils.mkdir_p(Configuration.data_folder_path)
-      sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
-      Synchronizer.instance_variable_set(:@finalize_required,true)
-      Synchronizer.stubs(:directory_hash).returns(sample_directory_hash)
-      Adapters::Dummy.expects(:write).with(anything,Index.send(:index_key)).returns(true)
-      Synchronizer.finalize!
-    end
-
-    test 'should decrypt remote directory file' do
-      #setup mock data
-      sample_directory_hash = {'sample_file_key' => 'test_sub_folder/sample_file.txt'}
-      encrypted_directory_hash = Cryptographer.encrypt_data(sample_directory_hash.to_yaml)
-      Adapters::Dummy.expects(:read).with(Index.send(:index_key)).returns(encrypted_directory_hash)
-
-      #do actual test
-      decrypted_remote_hash = Index.remote
-      assert_equal(sample_directory_hash,decrypted_remote_hash)
-    end
-
-    test 'should puts error message to stdout' do
-      Configuration.stubs(:settings).raises(Errors::IncompleteConfigurationError,'test message')
-      assert_equal('',$stdout.string)
-      Synchronizer.expects(:pull_files).never
-      Synchronizer.run
-      assert_match(/test message/,$stdout.string)
-    end
-
-    test 'should successfully run sync' do
-      Synchronizer.expects(:delete_local_files!).returns(true)
-      Synchronizer.expects(:delete_remote_files!).returns(true)
-      Synchronizer.expects(:pull_files!).returns(true)
-      Synchronizer.expects(:push_files!).returns(true)
-      Synchronizer.expects(:finalize!).returns(true)
-      Synchronizer.run
-    end
-
-    test 'should not push files that already exist' do
-      Synchronizer.stubs(:files_to_push).returns({:foo => 'bar'})
-      AdapterLiaison.instance.stubs(:key_exists?).returns(true)
-      Synchronizer.push_files!
-      assert_match(/\(already exists\)/,$stdout.string)
-    end
-
-    test 'should not pull files that already exist' do
-      Synchronizer.stubs(:files_to_pull).returns({:foo => 'bar'})
-      File.stubs(:exist?).returns(true)
-      Index.stubs(:file_key).returns(:foo)
-      Synchronizer.pull_files!
-      assert_match(/\(already exists\)/,$stdout.string)
-    end
-
-    test 'should gracefully recover if pull fails' do
-      Synchronizer.stubs(:files_to_pull).returns({:foo => 'bar'})
-      AdapterLiaison.instance.stubs(:pull).raises(Errors::NoSuchKey)
-      Synchronizer.pull_files!
-      assert_match(/Failed to pull/,$stdout.string)
+      assert_match(/Deleting Local/,$stdout.string)
     end
 
     test 'should gracefully recover if local file disappears before delete' do
       Synchronizer.stubs(:local_files_to_delete).returns({:foo => 'bar'})
       File.stubs(:exist?).returns(false)
-      Synchronizer.delete_local_files!
+      Synchronizer.delete_local_files
       assert_match(/Not Deleting Local/,$stdout.string)
     end
 
+    test 'should finalize' do
+      Synchronizer.instance_variable_set(:@finalize_required,true)
+      Index.expects(:write)
+
+      Synchronizer.finalize
+    end
+
+    test 'should want to push everything on first run with local files and empty remote' do
+      Index.stubs(:remote).returns({})
+      Index.stubs(:local).returns({"new_file_key"=>"test_sub_folder/new_file.txt"})
+      Synchronizer.stubs(:last_sync_hash).returns({})
+      assert_equal(Index.local,Synchronizer.send(:files_to_push))
+    end
+
+    test 'should want to push new files with available last sync hash' do
+      new_file_hash = {"new_file_key"=>"test_sub_folder/new_file.txt"}
+      Index.stubs(:remote).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"}.merge(new_file_hash))
+      Synchronizer.stubs(:last_sync_hash).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      assert_equal(new_file_hash,Synchronizer.send(:files_to_push))
+    end
+
+    test 'should want to push new files with local and remote files and empty last sync hash' do
+      new_file_hash = {"new_file_key"=>"test_sub_folder/new_file.txt"}
+      Index.stubs(:remote).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"}.merge(new_file_hash))
+      Synchronizer.stubs(:last_sync_hash).returns({})
+      assert_equal(new_file_hash,Synchronizer.send(:files_to_push))
+    end
+
+    test 'should want to puull everything on first run with no local files and remote files available' do
+      Index.stubs(:remote).returns({"new_file_key"=>"test_sub_folder/new_file.txt"})
+      Index.stubs(:local).returns({})
+      Synchronizer.stubs(:last_sync_hash).returns({})
+      assert_equal(Index.remote,Synchronizer.send(:files_to_pull))
+    end
+
+    test 'should want to pull new files with available last sync hash' do
+      new_file_hash = {"new_file_key"=>"test_sub_folder/new_file.txt"}
+      Index.stubs(:remote).returns({"old_file_key"=>"test_sub_folder/old_file.txt"}.merge(new_file_hash))
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Synchronizer.stubs(:last_sync_hash).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      assert_equal(new_file_hash,Synchronizer.send(:files_to_pull))
+    end
+
+    test 'should want to pull new files with local and remote files and empty last sync hash' do
+      new_file_hash = {"new_file_key"=>"test_sub_folder/new_file.txt"}
+      Index.stubs(:remote).returns({"old_file_key"=>"test_sub_folder/old_file.txt"}.merge(new_file_hash))
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Synchronizer.stubs(:last_sync_hash).returns({})
+      assert_equal(new_file_hash,Synchronizer.send(:files_to_pull))
+    end
+
+    test 'should not want to delete remote files if last sync hash is empty' do
+      Index.stubs(:remote).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Index.stubs(:local).returns({})
+      Synchronizer.stubs(:last_sync_hash).returns({})
+      assert_equal({},Synchronizer.send(:remote_files_to_delete))
+    end
+
+    test 'should want to delete remote files' do
+      Index.stubs(:remote).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Index.stubs(:local).returns({})
+      Synchronizer.stubs(:last_sync_hash).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      assert_equal(Index.remote,Synchronizer.send(:remote_files_to_delete))
+    end
+
+    test 'should not want to delete local files if last sync hash is empty' do
+      Index.stubs(:remote).returns({})
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Synchronizer.stubs(:last_sync_hash).returns({})
+      assert_equal({},Synchronizer.send(:local_files_to_delete))
+    end
+
+    test 'should want to delete local files' do
+      Index.stubs(:remote).returns({})
+      Index.stubs(:local).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      Synchronizer.stubs(:last_sync_hash).returns({"old_file_key"=>"test_sub_folder/old_file.txt"})
+      assert_equal(Index.local,Synchronizer.send(:local_files_to_delete))
+    end
   end
 end
