@@ -11,13 +11,9 @@ module CloudEncryptedSync
       Object.send(:remove_const,:ARGV) #if defined?(::ARGV)
     end
 
-    test 'should parse command line options' do
+    test 'should load settings' do
       ::ARGV = '--adapter dummy --bucket foobar --data-dir ~/test/folder --encryption-key somestringofcharacters /some/path'.split(/\s/)
-      settings = Configuration.settings
-      assert_equal('dummy',settings[:adapter_name])
-      assert_equal('~/test/folder',settings[:data_dir])
-      assert_equal('somestringofcharacters',settings[:encryption_key])
-      assert_equal('foobar',settings[:bucket])
+      assert_equal(Hash,Configuration.settings.class)
     end
 
     test 'should gracefully fail without path in ARGV' do
@@ -25,7 +21,7 @@ module CloudEncryptedSync
       assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
     end
 
-    test 'should gracefully fail when not provided encryption_key and vector provided path in ARGV' do
+    test 'should gracefully fail when not provided encryption_key and provided path in ARGV' do
       ::ARGV = '--adapter dummy --bucket foobar /some/path/to/sync'.split(/\s/)
       assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
     end
@@ -36,5 +32,6 @@ module CloudEncryptedSync
       Configuration.settings
       assert File.exist?('/test')
     end
+
   end
 end

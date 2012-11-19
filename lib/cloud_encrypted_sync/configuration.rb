@@ -70,15 +70,7 @@ module CloudEncryptedSync
         end
         @option_parser.parse!
 
-        create_folder_if_necessary(clo[:data_dir])
-
         return clo
-      end
-
-      def create_folder_if_necessary(path)
-        unless File.exist?(path)
-          FileUtils.mkpath(File.expand_path(path))
-        end
       end
 
     end
