@@ -57,7 +57,7 @@ module CloudEncryptedSync
 
         @option_parser = OptionParser.new do |opts|
           opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync"
-          opts.on('--data-dir PATH',"Data directory where snapshots and config file are found.") do |path|
+          opts.on('--data-dir PATH',"Data directory where indexes and config file are found.") do |path|
             clo[:data_dir] = path
           end
           opts.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|

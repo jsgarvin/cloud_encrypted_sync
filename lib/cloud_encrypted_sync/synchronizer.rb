@@ -69,7 +69,7 @@ module CloudEncryptedSync
       def delete_local_files
         local_files_to_delete.each_pair do |key,relative_path|
           full_path = Index.full_file_path(relative_path)
-          if !File.exist?(full_path) or (Index.file_key(full_path) == key)
+          if !File.exist?(full_path)
             puts "Not Deleting Local: #{relative_path}"
           else
             puts "Deleting Local: #{relative_path}"
@@ -92,7 +92,7 @@ module CloudEncryptedSync
       end
 
       def last_sync_hash
-        @last_sync_hash ||= File.exist?(Index.snapshot_path) ? YAML.load(File.read(Index.snapshot_path)) : {}
+        @last_sync_hash ||= File.exist?(Index.index_path) ? YAML.load(File.read(Index.index_path)) : {}
       end
 
       def files_to_push

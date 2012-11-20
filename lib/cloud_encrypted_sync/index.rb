@@ -18,15 +18,15 @@ module CloudEncryptedSync
       def write
         local_hash = compile_local_hash #recompile
         liaison.push(local_hash.to_yaml,index_key) #push to remote
-        File.open(snapshot_path, 'w') { |file| YAML.dump(local_hash, file) } #save to local
+        File.open(index_path, 'w') { |file| YAML.dump(local_hash, file) } #save to local
       end
 
       def full_file_path(relative_path)
-        normalized_sync_path+'/'+relative_path
+        normalized_sync_path+relative_path
       end
 
-      def snapshot_path
-        "#{Configuration.data_folder_path}/#{snapshot_filename}"
+      def index_path
+        "#{Configuration.data_folder_path}/#{index_filename}"
       end
 
       def file_key(full_path)
@@ -60,7 +60,7 @@ module CloudEncryptedSync
         @index_key ||= Cryptographer.hash_data(Configuration.settings[:encryption_key])
       end
 
-      def snapshot_filename
+      def index_filename
         "#{normalized_sync_path.gsub(/[^A-Za-z0-9]/,'_')}.index.yml"
       end
 

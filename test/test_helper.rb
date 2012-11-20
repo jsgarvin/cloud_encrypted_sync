@@ -21,6 +21,7 @@ module CloudEncryptedSync
     def initialize_environment
       initialize_fake_fs
       stub_configuration
+      Index.instance_variable_set(:@local,nil)
       Index.instance_variable_set(:@remote,nil)
     end
 

@@ -71,7 +71,7 @@ module CloudEncryptedSync
 
     test 'should delete local files' do
       Index.stubs(:remote).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'})
-      Synchronizer.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt', 'deleted_file_key' => 'test_sub_folder/deleted_file.txt'}.merge(Index.local))
+      Synchronizer.stubs(:last_sync_hash).returns({'saved_file_key' => 'test_sub_folder/saved_file.txt'}.merge(Index.local))
       assert_difference('Dir["#{test_source_folder}/**/*"].length',-1) do
         Synchronizer.delete_local_files
       end
