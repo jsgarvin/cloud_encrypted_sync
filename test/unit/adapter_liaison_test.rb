@@ -41,5 +41,13 @@ module CloudEncryptedSync
       assert_equal({'first_test' => '1.2.3', 'second_test' => '7.8.9'}, AdapterLiaison.instance.send(:latest_versions_of_installed_adapters))
     end
 
+    test 'should exercise dummy adapter for test coverage' do
+      dummy = Adapters::Dummy
+      dummy.write('dummy test data','testkey')
+      assert_equal('dummy test data',dummy.read('testkey'))
+      dummy.delete('testkey')
+      assert_equal(false,dummy.key_exists?('testkey'))
+    end
+
   end
 end

@@ -5,7 +5,7 @@ module CloudEncryptedSync
       class << self
 
         def write(data,key)
-          stored_data[key] = data
+          stored_data[bucket_name][key] = data
         end
 
         def parse_command_line_options(opts,command_line_options)
