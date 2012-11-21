@@ -14,17 +14,17 @@ module CloudEncryptedSync
     end
 
     test 'should calculate time elapsed' do
-      assert_in_delta(42,@progress_meter.time_elapsed,0.01)
+      assert_in_delta(42,@progress_meter.time_elapsed,0.02)
     end
 
     test 'should estimate finish time' do
       @progress_meter.increment_completed_index
-      assert_in_delta(Time.now+(42*3),@progress_meter.estimated_finish_time,0.01)
+      assert_in_delta(Time.now+(42*3),@progress_meter.estimated_finish_time,0.02)
     end
 
     test 'should estimate time remaining' do
       @progress_meter.increment_completed_index
-      assert_in_delta((42*3),@progress_meter.estimated_time_remaining.to_f,0.01)
+      assert_in_delta((42*3),@progress_meter.estimated_time_remaining.to_f,0.02)
     end
 
     test 'should increment counter and write to stdout' do
