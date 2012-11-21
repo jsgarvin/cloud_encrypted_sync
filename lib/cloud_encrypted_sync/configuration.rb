@@ -6,7 +6,7 @@ module CloudEncryptedSync
       attr_reader :option_parser
 
       def settings
-        @settings ||= load_settings
+        @settings ||= load
       end
 
       def data_folder_path
@@ -17,17 +17,30 @@ module CloudEncryptedSync
       private
       #######
 
-      def load_settings
+      def load
         touch_data_folder
-        loaded_settings = {}
-        loaded_settings = YAML.load_file(config_file_path) if File.exist?(config_file_path)
-        loaded_settings.merge!(command_line_options)
-        loaded_settings = loaded_settings.inject({}) do |options, (key, value)|
-          options[(key.to_sym rescue key) || key] = value
-          options
-        end
+        loaded_settings = config_file_settings.merge(command_line_options).with_indifferent_access
+
         loaded_settings[:sync_path] = ARGV.shift unless ARGV.empty?
 
+        validate_settings(loaded_settings)
+
+        return loaded_settings
+      end
+
+      def config_file_settings
+        @config_file_settings ||= load_config_file_settings
+      end
+
+      def load_config_file_settings
+        if File.exist?(config_file_path)
+          YAML.load_file(config_file_path)
+        else
+          {}
+        end
+      end
+
+      def validate_settings(loaded_settings)
         if loaded_settings[:sync_path].nil?
           message = "You must supply a path to a folder to sync.\n\n#{option_parser.help}"
           raise Errors::IncompleteConfigurationError.new(message)
@@ -35,8 +48,6 @@ module CloudEncryptedSync
           message = "You must supply an encryption key.\n\n#{option_parser.help}"
           raise Errors::IncompleteConfigurationError.new(message)
         end
-
-        return loaded_settings
       end
 
       def touch_data_folder
