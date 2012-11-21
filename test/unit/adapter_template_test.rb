@@ -4,7 +4,7 @@ module CloudEncryptedSync
   class AdapterTemplateTest < ActiveSupport::TestCase
 
     test 'should register with parent class on inheritance' do
-      Adapters::Template.expects(:register_subclass_with_parent).returns(true)
+      Adapters::Template.expects(:register_with_parent).returns(true)
       Class.new(Adapters::Template)
     end
 
