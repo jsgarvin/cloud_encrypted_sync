@@ -41,7 +41,7 @@ module CloudEncryptedSync
     #######
 
     def notify
-      puts sprintf("\r#{label}%0.1f%% Complete. Time Remaining %s", percent_completed, estimated_time_remaining.strftime('%M:%S'))
+      print sprintf("\r#{label}%0.1f%% Complete. Time Remaining %s", percent_completed, estimated_time_remaining.strftime('%M:%S'))
     end
   end
 end
