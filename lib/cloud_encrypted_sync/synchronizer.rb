@@ -61,12 +61,17 @@ module CloudEncryptedSync
         else
           Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
           puts "Pulling: #{relative_path}"
-          begin
-            File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
-            self.finalize_required = true
-          rescue Errors::NoSuchKey
-            puts "Failed to pull #{relative_path}"
-          end
+          pull_file_or_rescue(key,relative_path)
+        end
+      end
+
+      def pull_file_or_rescue(key,relative_path)
+        full_path = Index.full_file_path(relative_path)
+        begin
+          File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
+          self.finalize_required = true
+        rescue Errors::NoSuchKey
+          puts "Failed to pull #{relative_path}"
         end
       end
 
