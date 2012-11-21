@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    cloud_encrypted_sync (0.2.0)
+    cloud_encrypted_sync (0.3.0)
 
 GEM
   remote: http://rubygems.org/
