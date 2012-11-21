@@ -54,3 +54,5 @@ tries to do something weird).
 ## Creating your own adapter
 
 TODO
+
+[![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/jsgarvin/cloud_encrypted_sync)
