@@ -8,18 +8,11 @@ module CloudEncryptedSync
       @label = options[:label] || ''
       @completed_index = 0.0
       @start_time = Time.now
+      yield self if block_given?
     end
 
-    def to_s
-      sprintf("\r#{label}%0.1f%% Complete. Time Remaining %s", percent_completed, estimated_time_remaining.strftime('%M:%S'))
-    end
-
-    def percent_completed
-      (completed_index/max_index)*100
-    end
-
-    def time_elapsed
-      Time.now - start_time
+    def estimated_time_remaining
+      Time.at(estimated_finish_time - Time.now)
     end
 
     def estimated_finish_time
@@ -30,14 +23,25 @@ module CloudEncryptedSync
       end
     end
 
-    def estimated_time_remaining
-      Time.at(estimated_finish_time - Time.now)
+    def percent_completed
+      (completed_index/max_index)*100
     end
 
-    def update(completed_index)
-      self.completed_index = completed_index
-      return self
+    def time_elapsed
+      Time.now - start_time
     end
 
+    def increment_completed_index(amount = 1)
+      self.completed_index += amount
+      notify
+    end
+
+    #######
+    private
+    #######
+
+    def notify
+      puts sprintf("\r#{label}%0.1f%% Complete. Time Remaining %s", percent_completed, estimated_time_remaining.strftime('%M:%S'))
+    end
   end
 end

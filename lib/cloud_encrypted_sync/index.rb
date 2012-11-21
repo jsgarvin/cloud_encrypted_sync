@@ -43,16 +43,14 @@ module CloudEncryptedSync
 
       def compile_local_hash
         hash = {}
-        progress_meter = ProgressMeter.new(Dir["#{normalized_sync_path}/**/*"].length,:label => 'Compiling Local Index: ')
-        completed_files = 0
-        Find.find(normalized_sync_path) do |path|
-          print progress_meter.update(completed_files)
-          unless FileTest.directory?(path)
-            hash[file_key(path)] = relative_file_path(path)
+        ProgressMeter.new(Dir["#{normalized_sync_path}/**/*"].length,:label => 'Compiling Local Index: ') do |progress_meter|
+          Find.find(normalized_sync_path) do |path|
+            unless FileTest.directory?(path)
+              hash[file_key(path)] = relative_file_path(path)
+            end
+            progress_meter.increment_completed_index
           end
-          completed_files += 1
         end
-        puts #newline for progress meter
         return hash
       end
 

@@ -21,35 +21,32 @@ module CloudEncryptedSync
       #######
 
       def push_files
-        progress_meter = ProgressMeter.new(files_to_push.keys.size,:label => 'Pushing Files: ')
-        pushed_files_counter = 0
-        files_to_push.each_pair do |key,relative_path|
-          puts #newline for progress meter
-          push_file_if_necessary(key,relative_path)
-          pushed_files_counter += 1
-          print progress_meter.update(pushed_files_counter)
+        ProgressMeter.new(files_to_push.keys.size,:label => 'Pushing Files: ') do |progress_meter|
+          pushed_files_counter = 0
+          files_to_push.each_pair do |key,relative_path|
+            push_file_if_necessary(key,relative_path)
+            progress_meter.increment_completed_index
+          end
         end
       end
 
       def push_file_if_necessary(key,relative_path)
         if liaison.key_exists?(key)
           #already exists. probably left over from an earlier aborted push
-          puts "Not Pushing (already exists): #{relative_path}"
+          puts "\nNot Pushing (already exists): #{relative_path}"
         else
-          puts "Pushing: #{relative_path}"
+          puts "\nPushing: #{relative_path}"
           liaison.push(File.read(Index.full_file_path(relative_path)),key)
           self.finalize_required = true
         end
       end
 
       def pull_files
-        progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
-        pulled_files_counter = 0
-        files_to_pull.each_pair do |key,relative_path|
-          puts #newline for progress meter
-          pull_file_if_necessary(key,relative_path)
-          pulled_files_counter += 1
-          print progress_meter.update(pulled_files_counter)
+        ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ') do |progress_meter|
+          files_to_pull.each_pair do |key,relative_path|
+            pull_file_if_necessary(key,relative_path)
+            progress_meter.increment_completed_index
+          end
         end
       end
 
@@ -57,10 +54,10 @@ module CloudEncryptedSync
         full_path = Index.full_file_path(relative_path)
         if File.exist?(full_path) and (Index.file_key(full_path) == key)
           #already exists. probably left over from an earlier aborted pull
-          puts "Not Pulling (already exists): #{full_path}"
+          puts "\nNot Pulling (already exists): #{full_path}"
         else
           Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
-          puts "Pulling: #{relative_path}"
+          puts "\nPulling: #{relative_path}"
           pull_file_or_rescue(key,relative_path)
         end
       end
@@ -71,7 +68,7 @@ module CloudEncryptedSync
           File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
           self.finalize_required = true
         rescue Errors::NoSuchKey
-          puts "Failed to pull #{relative_path}"
+          puts "\nFailed to pull #{relative_path}"
         end
       end
 
