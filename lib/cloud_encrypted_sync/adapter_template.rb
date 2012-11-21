@@ -14,8 +14,8 @@ module CloudEncryptedSync
           @children ||= {}
         end
 
-        def parse_command_line_options(opts,command_line_options)
-          instance.parse_command_line_options(opts,command_line_options)
+        def parse_command_line_options(parser)
+          instance.parse_command_line_options(parser)
         end
 
         def write(data, key)
@@ -49,7 +49,7 @@ module CloudEncryptedSync
 
       end
 
-      def parse_command_line_options(opts,command_line_options)
+      def parse_command_line_options(parser)
         raise Errors::TemplateMethodCalled.new('parse_command_line_options')
       end
 

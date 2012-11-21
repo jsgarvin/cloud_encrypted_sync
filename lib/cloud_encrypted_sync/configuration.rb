@@ -66,16 +66,16 @@ module CloudEncryptedSync
         executable_name = File.basename($PROGRAM_NAME)
         clo = {:data_dir => "#{Etc.getpwuid.dir}/.cloud_encrypted_sync"}
 
-        @option_parser = OptionParser.new do |opts|
-          opts.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync"
-          opts.on('--data-dir PATH',"Data directory where indexes and config file are found.") do |path|
+        @option_parser = OptionParser.new do |parser|
+          parser.banner = "Usage: #{executable_name} [options] /path/to/folder/to/sync"
+          parser.on('--data-dir PATH',"Data directory where indexes and config file are found.") do |path|
             clo[:data_dir] = path
           end
-          opts.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
+          parser.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
             clo[:adapter_name] = adapter_name
-            clo = AdapterLiaison.instance.adapters[adapter_name.to_sym].parse_command_line_options(opts,clo)
+            AdapterLiaison.instance.adapters[adapter_name.to_sym].parse_command_line_options(parser)
           end
-          opts.on('--encryption-key KEY') do |key|
+          parser.on('--encryption-key KEY') do |key|
             clo[:encryption_key] = key
           end
         end

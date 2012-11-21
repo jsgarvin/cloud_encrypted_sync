@@ -33,11 +33,13 @@ module CloudEncryptedSync
         :sync_path => test_source_folder
       })
       Configuration.stubs(:data_folder_path).returns("#{Etc.getpwuid.dir}/.cloud_encrypted_sync")
+      Adapters::Dummy.any_instance.stubs(:bucket_name).returns('test-bucket')
     end
 
     def unstub_configuration
       Configuration.unstub(:settings)
       Configuration.unstub(:data_folder_path)
+      Adapters::Dummy.any_instance.unstub(:bucket_name)
     end
 
     def test_source_folder

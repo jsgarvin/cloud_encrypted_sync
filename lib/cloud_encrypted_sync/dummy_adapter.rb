@@ -1,16 +1,16 @@
 module CloudEncryptedSync
   module Adapters
     class Dummy < Template
+      attr_accessor :bucket_name
 
       def write(data,key)
         stored_data[bucket_name][key] = data
       end
 
-      def parse_command_line_options(opts,command_line_options)
-        opts.on('--bucket BUCKETNAME', 'Name of cloud adapter to use.') do |bucket_name|
-          command_line_options[:bucket] = bucket_name
+      def parse_command_line_options(parser)
+        parser.on('--bucket BUCKETNAME', 'Name of cloud adapter to use.') do |bucket_argument|
+          self.bucket_name = bucket_argument
         end
-        return command_line_options
       end
 
       def read(key)
@@ -32,10 +32,6 @@ module CloudEncryptedSync
 
       def stored_data
         @stored_data ||= { bucket_name => {} }
-      end
-
-      def bucket_name
-        Configuration.settings[:bucket].to_sym
       end
 
     end

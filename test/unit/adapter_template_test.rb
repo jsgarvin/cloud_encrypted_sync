@@ -15,7 +15,7 @@ module CloudEncryptedSync
     test 'should raise errors on public methods' do
 
       method_argument_map = {
-        :parse_command_line_options => [:foo,:bar],
+        :parse_command_line_options => :foo,
         :write => [:foo,:bar],
         :read => :foobar,
         :delete => :foobar,
