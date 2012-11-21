@@ -16,21 +16,29 @@ module CloudEncryptedSync
         end
       end
 
+      #######
+      private
+      #######
+
       def push_files
         progress_meter = ProgressMeter.new(files_to_push.keys.size,:label => 'Pushing Files: ')
         pushed_files_counter = 0
         files_to_push.each_pair do |key,relative_path|
           puts #newline for progress meter
-          if liaison.key_exists?(key)
-            #already exists. probably left over from an earlier aborted push
-            puts "Not Pushing (already exists): #{relative_path}"
-          else
-            puts "Pushing: #{relative_path}"
-            liaison.push(File.read(Index.full_file_path(relative_path)),key)
-            self.finalize_required = true
-          end
+          push_file_if_necessary(key,relative_path)
           pushed_files_counter += 1
           print progress_meter.update(pushed_files_counter)
+        end
+      end
+
+      def push_file_if_necessary(key,relative_path)
+        if liaison.key_exists?(key)
+          #already exists. probably left over from an earlier aborted push
+          puts "Not Pushing (already exists): #{relative_path}"
+        else
+          puts "Pushing: #{relative_path}"
+          liaison.push(File.read(Index.full_file_path(relative_path)),key)
+          self.finalize_required = true
         end
       end
 
@@ -38,23 +46,27 @@ module CloudEncryptedSync
         progress_meter = ProgressMeter.new(files_to_pull.keys.size,:label => 'Pulling Files: ')
         pulled_files_counter = 0
         files_to_pull.each_pair do |key,relative_path|
-          full_path = Index.full_file_path(relative_path)
           puts #newline for progress meter
-          if File.exist?(full_path) and (Index.file_key(full_path) == key)
-            #already exists. probably left over from an earlier aborted pull
-            puts "Not Pulling (already exists): #{full_path}"
-          else
-            Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
-            puts "Pulling: #{relative_path}"
-            begin
-              File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
-              self.finalize_required = true
-            rescue Errors::NoSuchKey
-              puts "Failed to pull #{relative_path}"
-            end
-          end
+          pull_file_if_necessary(key,relative_path)
           pulled_files_counter += 1
           print progress_meter.update(pulled_files_counter)
+        end
+      end
+
+      def pull_file_if_necessary(key,relative_path)
+        full_path = Index.full_file_path(relative_path)
+        if File.exist?(full_path) and (Index.file_key(full_path) == key)
+          #already exists. probably left over from an earlier aborted pull
+          puts "Not Pulling (already exists): #{full_path}"
+        else
+          Dir.mkdir(File.dirname(full_path)) unless File.exist?(File.dirname(full_path))
+          puts "Pulling: #{relative_path}"
+          begin
+            File.open(full_path,'w') { |file| file.write(liaison.pull(key)) }
+            self.finalize_required = true
+          rescue Errors::NoSuchKey
+            puts "Failed to pull #{relative_path}"
+          end
         end
       end
 
@@ -82,10 +94,6 @@ module CloudEncryptedSync
       def finalize
         Index.write if finalize_required
       end
-
-      #######
-      private
-      #######
 
       def liaison
         AdapterLiaison.instance
