@@ -74,7 +74,7 @@ module CloudEncryptedSync
 
       def delete_remote_files
         remote_files_to_delete.each_pair do |key,path|
-          puts "\nDeleting Remote: #{path}"
+          print "\nDeleting Remote: #{path}"
           liaison.delete(key)
           self.finalize_required = true
         end
@@ -84,9 +84,9 @@ module CloudEncryptedSync
         local_files_to_delete.each_pair do |key,relative_path|
           full_path = Index.full_file_path(relative_path)
           if !File.exist?(full_path)
-            puts "\nNot Deleting Local: #{relative_path}"
+            print "\nNot Deleting Local: #{relative_path}"
           else
-            puts "\nDeleting Local: #{relative_path}"
+            print "\nDeleting Local: #{relative_path}"
             File.delete(full_path)
             self.finalize_required = true
           end
