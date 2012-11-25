@@ -23,7 +23,7 @@ preferred cloud.
 CES runs as a command line tool and takes options as CLI arguments and/or from a config file.
 Arguments passed at the command line take precedence over those in the config file.
 
-### Example
+### Example (assuming CES S3 Adapter gem is installed)
 
     ces --adapter s3 \
       --s3-bucket my-backup-bucket \
@@ -41,7 +41,7 @@ The default location for the config file is `~/.cloud_encrypted_sync/config.rc.y
 ### Available Settings
 
 CES requires the following configuration settings. Any of thse may alternatively be placed in
-the `config.rc.yml` execpt for `--data-dir` (which tells CES which folder contains the config
+the `config.rc.yml` except for `--data-dir` (which tells CES which folder contains the config
 file to use).
 
 * `--adapter=ADAPTERNAME` The name of the adapter to use. See instructions for your preferred
@@ -56,6 +56,33 @@ tries to do something weird).
 
 ## Creating your own adapter
 
-TODO
+To create your own adapter to a cloud storage service, you'll need to do the following.
+
+* Create a Ruby Gem named `cloud_encrypted_sync_*_adapter` where `*` is the name of your adapter.
+  It is recommended that you name your adapter after the cloud service that it interfaces to.
+  (eg. cloud_encrypted_sync_s3_adapter ). CES will not be able to find and load your adapter
+  unless it precisely matches this naming convention.
+* Your gem needs to provide a class within the `CloudEncryptedSync::Adapters` namespace that
+  inherites from `Template`. The name of this class will determine the value that users pass with
+  `--adaper` on the command line to select your adapter.  For instance, if you name your class
+  `MySuperDooperAdapter`, then users will need to pass `--adapter my_super_dooper_adapter` at the
+  command line to select your adapter.
+* See the [Foundation](https://github.com/jsgarvin/cloud_encrypted_sync_foundation_adapter/blob/master/lib/foundation/adapter.rb)
+  class in [cloud_encrypted_sync_foundation_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_foundation_adapter "Cloud Encrypted Sync Foundation Adapter")
+  for a list of methods that your adapter class needs to respond to, what arguments they need to
+  accept, and what values they're expected to return.
+
+Note: [cloud_encrypted_sync_foundation_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_foundation_adapter "Cloud Encrypted Sync Foundation Adapter")
+is a forkable baseline repository that should make the above steps easier. Simply fork it, rename it,
+update it as necessary, and push it to rubygems.org.
+
+### Testing your adapter locally before publishing to rubygems.org
+
+It is likely that, before publishing your new adapter to rubygems.org, you'll want to build and
+install your gem locally to test it with CES. When you do this you'll also want to have the CES
+gem itself built and installed locally, rather than installed from rubygems.org. It has been found
+that when CES has been installed from rubygems.org, it is unable to find and load locally built
+adapters, and visa-versa. The CES author is very interested in any patches that provide an elegant
+solution to this annoyance.
 
 [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/jsgarvin/cloud_encrypted_sync)
