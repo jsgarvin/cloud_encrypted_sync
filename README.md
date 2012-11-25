@@ -40,13 +40,13 @@ The default location for the config file is `~/.cloud_encrypted_sync/config.rc.y
 
 ### Available Settings
 
-CES requires the following configuration settings. Any of thse may alternatively be placed in
+CES requires the following configuration settings. Any of these may alternatively be placed in
 the `config.rc.yml` except for `--data-dir` (which tells CES which folder contains the config
 file to use).
 
-* `--adapter=ADAPTERNAME` The name of the adapter to use. See instructions for your preferred
+* `--adapter ADAPTERNAME` The name of the adapter to use. See instructions for your preferred
 adapter for instructions of what to place here.
-* `--encryption-key=XXX`  The encryption key (shocking, I know).
+* `--encryption-key XXX`  The encryption key (shocking, I know).
 
 In addition to these settings, your chosen adapter will probably also have additional adapter
 specific settings as well, such as credentials to log into your cloud storage account. Adapter
