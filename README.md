@@ -25,9 +25,12 @@ Arguments passed at the command line take precedence over those in the config fi
 
 ### Example
 
-    ces --adapter=s3 --bucket=my-backup-bucket \
-      --s3-credentials=ACCESS_KEY_ID,SECRET_ACCESS_KEY \
-      --encryption-key=MYENCRYPTIONKEY /path/to/source/folder
+    ces --adapter s3 \
+      --s3-bucket my-backup-bucket \
+      --s3-access-key-id ACCESS_KEY_ID \
+      --s3-access-id SECRET_ACCESS_KEY \
+      --encryption-key MYENCRYPTIONKEY \
+      /path/to/source/folder
 
 ## Configuration
 
