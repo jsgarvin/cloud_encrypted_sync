@@ -67,13 +67,13 @@ To create your own adapter to a cloud storage service, you'll need to do the fol
   `--adaper` on the command line to select your adapter.  For instance, if you name your class
   `MySuperDooperAdapter`, then users will need to pass `--adapter my_super_dooper_adapter` at the
   command line to select your adapter.
-* See the [Foundation](https://github.com/jsgarvin/cloud_encrypted_sync_foundation_adapter/blob/master/lib/foundation/adapter.rb)
-  class in [cloud_encrypted_sync_foundation_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_foundation_adapter "Cloud Encrypted Sync Foundation Adapter")
+* See the [Baseline](https://github.com/jsgarvin/cloud_encrypted_sync_baseline_adapter/blob/master/lib/baseline/adapter.rb)
+  class in [cloud_encrypted_sync_baseline_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_baseline_adapter "Cloud Encrypted Sync Baseline Adapter")
   for a list of methods that your adapter class needs to respond to, what arguments they need to
   accept, and what values they're expected to return.
 
-Note: [cloud_encrypted_sync_foundation_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_foundation_adapter "Cloud Encrypted Sync Foundation Adapter")
-is a forkable baseline repository that should make the above steps easier. Simply fork it, rename it,
+Note: [cloud_encrypted_sync_baseline_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_baseline_adapter "Cloud Encrypted Sync Baseline Adapter")
+is a forkable repository that should make the above steps easier. Simply fork it, rename it,
 update it as necessary, and push it to rubygems.org.
 
 ### Testing your adapter locally before publishing to rubygems.org
