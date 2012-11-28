@@ -73,7 +73,7 @@ module CloudEncryptedSync
           end
           parser.on('--adapter ADAPTERNAME', 'Name of cloud adapter to use.') do |adapter_name|
             clo[:adapter_name] = adapter_name
-            AdapterLiaison.instance.adapters[adapter_name.to_sym].parse_command_line_options(parser)
+            fetch_selected_adapter_or_raise(adapter_name).parse_command_line_options(parser)
           end
           parser.on('--encryption-key KEY') do |key|
             clo[:encryption_key] = key
@@ -84,6 +84,12 @@ module CloudEncryptedSync
         return clo
       end
 
+      def fetch_selected_adapter_or_raise(adapter_name)
+        if AdapterLiaison.instance.adapters[adapter_name.to_sym]
+          return AdapterLiaison.instance.adapters[adapter_name.to_sym]
+        end
+        raise Errors::IncompleteConfigurationError.new("Unrecognized adapter. Available choices are: #{AdapterLiaison.instance.adapters.keys.join(', ')}.")
+      end
     end
   end
 end

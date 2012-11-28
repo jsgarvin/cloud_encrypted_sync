@@ -30,6 +30,11 @@ module CloudEncryptedSync
       assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
     end
 
+    test 'should gracefully fail with invalid adapter provided' do
+      ::ARGV = '--adapter nonexistent --bucket foobar'.split(/\s/)
+      assert_raise(Errors::IncompleteConfigurationError) { Configuration.settings }
+    end
+
     test 'should create data folder if it does not exist' do
       ::ARGV = '--adapter dummy --bucket foobar --data-dir /test --encryption-key somestringofcharacters /some/path'.split(/\s/)
       assert ! File.exist?('/test')
