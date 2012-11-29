@@ -37,7 +37,7 @@ module CloudEncryptedSync
     end
 
     def latest_versions_of_installed_adapters
-      glob_path = '../../../../cloud_encrypted_sync_*_adapter-*/lib/*.rb'
+      glob_path = '../../../../cloud_encrypted_sync_*_adapter-*/lib/cloud_encrypted_sync_*_adapter.rb'
       Dir.glob(File.expand_path(glob_path,__FILE__)).inject({}) do |hash,adapter_path|
         if adapter_path.match(/cloud_encrypted_sync_(.+)_adapter-(.+)/)
           adapter_name = $1
