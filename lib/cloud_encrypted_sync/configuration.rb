@@ -3,7 +3,7 @@ module CloudEncryptedSync
 
     class << self
 
-      attr_reader :option_parser
+      attr_reader :option_parser, :cached_argv
 
       def settings
         @settings ||= load
@@ -13,12 +13,17 @@ module CloudEncryptedSync
         command_line_options[:data_dir]
       end
 
+      def signature
+        Cryptographer.hash_data(cached_argv.to_s + config_file_settings.to_s)
+      end
+
       #######
       private
       #######
 
       def load
         touch_data_folder
+        cache_argv
         loaded_settings = config_file_settings.merge(command_line_options).with_indifferent_access
 
         loaded_settings[:sync_path] = ARGV.shift unless ARGV.empty?
@@ -26,6 +31,14 @@ module CloudEncryptedSync
         validate_settings(loaded_settings)
 
         return loaded_settings
+      end
+
+      def touch_data_folder
+        FileUtils.mkdir_p(data_folder_path) unless Dir.exists?(data_folder_path)
+      end
+
+      def cache_argv
+        @cached_argv ||= ARGV.dup
       end
 
       def config_file_settings
@@ -48,10 +61,6 @@ module CloudEncryptedSync
           message = "You must supply an encryption key.\n\n#{option_parser.help}"
           raise Errors::IncompleteConfigurationError.new(message)
         end
-      end
-
-      def touch_data_folder
-        FileUtils.mkdir_p(data_folder_path) unless Dir.exists?(data_folder_path)
       end
 
       def config_file_path

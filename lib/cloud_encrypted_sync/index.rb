@@ -59,7 +59,7 @@ module CloudEncryptedSync
       end
 
       def index_filename
-        "#{normalized_sync_path.gsub(/[^A-Za-z0-9]/,'_')}.index.yml"
+        "#{Configuration.signature}.index.yml"
       end
 
       def relative_file_path(full_path)
