@@ -15,7 +15,7 @@ too.
 In addition to this gem you'll also need to install an adapter gem for the particular cloud
 you want to backup to.  At the time of this writing, the author has provided two adapters, one
 for Amazon S3 ([cloud_encrypted_sync_s3_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_s3_adapter))
-and one for local filesystems ([clound_encrypted_sync_filesystem_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_filesystem_adapter))
+and one for local filesystems ([cloud_encrypted_sync_filesystem_adapter](https://github.com/jsgarvin/cloud_encrypted_sync_filesystem_adapter))
 which has been tested to work with [Ubuntu One](https://one.ubuntu.com/referrals/referee/2304745/)
 and [Dropbox](http://db.tt/X7KUvsGn "Dropbox") folders, and should work well with any other cloud
 storage service that uses similar "magic" folders on the local file system. In addition, anyone can
