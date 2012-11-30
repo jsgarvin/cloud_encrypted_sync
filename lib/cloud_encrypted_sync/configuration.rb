@@ -22,14 +22,13 @@ module CloudEncryptedSync
       #######
 
       def load
-        touch_data_folder
         cache_argv
+        touch_data_folder
         loaded_settings = config_file_settings.merge(command_line_options).with_indifferent_access
 
         loaded_settings[:sync_path] = ARGV.shift unless ARGV.empty?
 
         validate_settings(loaded_settings)
-
         return loaded_settings
       end
 

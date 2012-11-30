@@ -5,10 +5,7 @@ module CloudEncryptedSync
 
     def setup
       unstub_configuration
-      Configuration.instance_variable_set(:@command_line_options,nil)
-      Configuration.instance_variable_set(:@settings,nil)
-      Configuration.instance_variable_set(:@option_parser,nil)
-      Object.send(:remove_const,:ARGV) #if defined?(::ARGV)
+      reset_configuration
     end
 
     test 'should load settings' do
@@ -42,5 +39,33 @@ module CloudEncryptedSync
       assert File.exist?('/test')
     end
 
+    test 'different arguments should produce different signature' do
+      # setup first signature
+      ::ARGV = '--adapter dummy --bucket foobar --data-dir /test --encryption-key somestringofcharacters /some/path'.split(/\s/)
+      Configuration.settings
+      first_signature = Configuration.signature
+
+      reset_configuration
+
+      # setup second signature with different bucket
+      ::ARGV = '--adapter dummy --bucket foobar2 --data-dir /test --encryption-key somestringofcharacters /some/path'.split(/\s/)
+      Configuration.settings
+      second_signature = Configuration.signature
+
+      refute_equal(first_signature,second_signature)
+    end
+
+    #######
+    private
+    #######
+
+    def reset_configuration
+      Configuration.instance_variable_set(:@cached_argv,nil)
+      Configuration.instance_variable_set(:@command_line_options,nil)
+      Configuration.instance_variable_set(:@config_file_settings,nil)
+      Configuration.instance_variable_set(:@settings,nil)
+      Configuration.instance_variable_set(:@option_parser,nil)
+      Object.send(:remove_const,:ARGV)
+    end
   end
 end
