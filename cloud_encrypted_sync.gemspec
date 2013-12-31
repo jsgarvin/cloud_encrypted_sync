@@ -10,6 +10,8 @@ Gem::Specification.new do |s|
   s.summary = %q{Encrypted sync of folder contents to/from cloud storage.}
   s.description = %q{Encrypted sync of folder contents to/from cloud storage with user controlled encryption keys.}
 
+  s.add_dependency('activesupport')
+
   s.add_development_dependency('mocha')
   s.add_development_dependency('simplecov')
   s.add_development_dependency('fakefs')
